@@ -1,4 +1,4 @@
-package com.xatkit.core.recognition.nluserver.mapper;
+package com.xatkit.core.recognition.nluserver.mapper.dsl;
 
 
 public class MatchedEntity {

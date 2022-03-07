@@ -1,12 +1,30 @@
-package com.xatkit.core.recognition.nluserver;
+package com.xatkit.core.recognition.dialogflow;
 
+import com.google.api.gax.rpc.FailedPreconditionException;
+import com.google.api.gax.rpc.InvalidArgumentException;
+import com.google.cloud.dialogflow.v2.Context;
+import com.google.cloud.dialogflow.v2.DetectIntentRequest;
+import com.google.cloud.dialogflow.v2.DetectIntentResponse;
+import com.google.cloud.dialogflow.v2.EntityType;
+import com.google.cloud.dialogflow.v2.Intent;
+import com.google.cloud.dialogflow.v2.ProjectAgentName;
+import com.google.cloud.dialogflow.v2.ProjectName;
+import com.google.cloud.dialogflow.v2.QueryInput;
+import com.google.cloud.dialogflow.v2.QueryParameters;
+import com.google.cloud.dialogflow.v2.QueryResult;
+import com.google.cloud.dialogflow.v2.SessionName;
+import com.google.cloud.dialogflow.v2.TextInput;
+import com.google.cloud.dialogflow.v2.TrainAgentRequest;
 import com.xatkit.core.EventDefinitionRegistry;
 import com.xatkit.core.XatkitException;
 import com.xatkit.core.recognition.AbstractIntentRecognitionProvider;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.RecognitionMonitor;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
+import com.xatkit.core.recognition.dialogflow.mapper.DialogFlowContextMapper;
+import com.xatkit.core.recognition.dialogflow.mapper.NLUServerEntityMapper;
+import com.xatkit.core.recognition.dialogflow.mapper.DialogFlowEntityReferenceMapper;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.DialogFlowIntentMapper;
+import com.xatkit.core.recognition.dialogflow.mapper.RecognizedIntentMapper;
 import com.xatkit.execution.StateContext;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.CompositeEntityDefinition;
@@ -23,7 +41,9 @@ import javax.annotation.Nullable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static fr.inria.atlanmod.commons.Preconditions.checkArgument;
@@ -34,17 +54,16 @@ import static java.util.Objects.nonNull;
 /**
  * An {@link AbstractIntentRecognitionProvider} bound to the DialogFlow API.
  * <p>
- * This class is used to easily setup a connection to Xatkit's own NLUServer implementation. The behavior of this
- * connector can be
- * customized in the Xatkit {@link Configuration}, see {@link NLUServerConfiguration} for more information on the
+ * This class is used to easily setup a connection to a given DialogFlow agent. The behavior of this connector can be
+ * customized in the Xatkit {@link Configuration}, see {@link DialogFlowConfiguration} for more information on the
  * configuration options.
  */
-public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitionProvider {
+public class DialogFlowIntentRecognitionProvider extends AbstractIntentRecognitionProvider {
 
     /**
-     * The {@link NLUServerConfiguration} extracted from the provided {@link Configuration}.
+     * The {@link DialogFlowConfiguration} extracted from the provided {@link Configuration}.
      */
-    private NLUServerConfiguration configuration;
+    private DialogFlowConfiguration configuration;
 
     /**
      * The clients used to access the DialogFlow API.
@@ -59,15 +78,30 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      *
      * @see #trainMLEngine()
      */
-    private String botName;
+    private ProjectName projectName;
+
+    /**
+     * Represents the DialogFlow agent name.
+     * <p>
+     * This attribute is used to compute intent-level operations, such as retrieving the list of registered
+     * {@link Intent}s, or deleting specific {@link Intent}s.
+     *
+     * @see #registerIntentDefinition(IntentDefinition)
+     * @see #deleteIntentDefinition(IntentDefinition)
+     */
+    private ProjectAgentName projectAgentName;
 
     /**
      * A local cache used to retrieve registered {@link Intent}s from their display name.
+     * <p>
+     * This cache is used to limit the number of calls to the DialogFlow API.
      */
     private Map<String, Intent> registeredIntents;
 
     /**
      * A local cache used to retrieve registered {@link EntityType}s from their display name.
+     * <p>
+     * This cache is used to limit the number of calls to the DialogFlow API.
      */
     private Map<String, EntityType> registeredEntityTypes;
 
@@ -78,14 +112,14 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     private RecognitionMonitor recognitionMonitor;
 
     /**
-     * The mapper creating a NLUServer {@link Intent}s from {@link IntentDefinition} instances.
+     * The mapper creating DialogFlow {@link Intent}s from {@link IntentDefinition} instances.
      */
     private DialogFlowIntentMapper dialogFlowIntentMapper;
 
     /**
      * The mapper creating DialogFlow {@link EntityType}s from {@link EntityDefinition} instances.
      */
-    private DialogFlowEntityMapper dialogFlowEntityMapper;
+    private NLUServerEntityMapper NLUServerEntityMapper;
 
     /**
      * The mapper creating DialogFlow {@link Context}s from {@link DialogFlowStateContext} instances.
@@ -105,7 +139,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     private RecognizedIntentMapper recognizedIntentMapper;
 
     /**
-     * Constructs a {@link NLUServerIntentRecognitionProvider} with the provided {@code eventRegistry}, {@code
+     * Constructs a {@link DialogFlowIntentRecognitionProvider} with the provided {@code eventRegistry}, {@code
      * configuration}, and {@code
      * recognitionMonitor}.
      * <p>
@@ -120,9 +154,9 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * @throws XatkitException      if an internal error occurred while creating the DialogFlow connector
      * @see DialogFlowConfiguration
      */
-    public NLUServerIntentRecognitionProvider(@NonNull EventDefinitionRegistry eventRegistry,
-                                              @NonNull Configuration configuration,
-                                              @Nullable RecognitionMonitor recognitionMonitor) {
+    public DialogFlowIntentRecognitionProvider(@NonNull EventDefinitionRegistry eventRegistry,
+                                               @NonNull Configuration configuration,
+                                               @Nullable RecognitionMonitor recognitionMonitor) {
         Log.info("Starting DialogFlow Client");
         this.configuration = new DialogFlowConfiguration(configuration);
         this.projectAgentName = ProjectAgentName.of(this.configuration.getProjectId());
@@ -136,7 +170,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         this.dialogFlowEntityReferenceMapper = new DialogFlowEntityReferenceMapper();
         this.dialogFlowIntentMapper = new DialogFlowIntentMapper(this.configuration,
                 this.dialogFlowEntityReferenceMapper);
-        this.dialogFlowEntityMapper = new DialogFlowEntityMapper(this.dialogFlowEntityReferenceMapper);
+        this.NLUServerEntityMapper = new NLUServerEntityMapper(this.dialogFlowEntityReferenceMapper);
         this.dialogFlowContextMapper = new DialogFlowContextMapper(this.configuration);
         this.recognizedIntentMapper = new RecognizedIntentMapper(this.configuration, eventRegistry);
         try {
@@ -287,7 +321,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
                     this.registerReferencedEntityDefinitions((CompositeEntityDefinition) entityDefinition);
                 }
                 entityType =
-                        dialogFlowEntityMapper.mapEntityDefinition(entityDefinition);
+                        NLUServerEntityMapper.mapEntityDefinition(entityDefinition);
                 try {
                     /*
                      * Store the EntityType returned by the DialogFlow API: some fields such as the name are
@@ -592,7 +626,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
 
     /**
      * Throws a {@link IntentRecognitionProviderException} if the provided
-     * {@link NLUServerIntentRecognitionProvider} is shutdown.
+     * {@link DialogFlowIntentRecognitionProvider} is shutdown.
      * <p>
      * This method is typically called in methods that need to interact with the DialogFlow API, and cannot complete
      * if the connector is shutdown.

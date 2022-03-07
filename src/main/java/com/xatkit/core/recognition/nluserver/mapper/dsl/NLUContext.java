@@ -1,10 +1,8 @@
-package com.xatkit.core.recognition.nluserver.mapper;
+package com.xatkit.core.recognition.nluserver.mapper.dsl;
 
 
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 public class NLUContext {
 
