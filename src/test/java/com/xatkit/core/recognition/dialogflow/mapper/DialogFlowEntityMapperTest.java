@@ -1,6 +1,8 @@
 package com.xatkit.core.recognition.dialogflow.mapper;
 
 import com.google.cloud.dialogflow.v2.EntityType;
+import com.xatkit.core.recognition.nluserver.mapper.DialogFlowEntityReferenceMapper;
+import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityMapper;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.CompositeEntityDefinition;
 import com.xatkit.intent.EntityDefinition;

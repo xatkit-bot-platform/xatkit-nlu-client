@@ -2,13 +2,13 @@ package com.xatkit.core.recognition.nluserver.mapper;
 
 
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
-import com.xatkit.core.recognition.dialogflow.DialogFlowCheckingUtils;
-import com.xatkit.core.recognition.dialogflow.DialogFlowConfiguration;
-import com.xatkit.core.recognition.dialogflow.mapper.DialogFlowEntityReferenceMapper;
 import com.xatkit.intent.ContextParameter;
 import com.xatkit.intent.IntentDefinition;
 import fr.inria.atlanmod.commons.log.Log;
 import lombok.NonNull;
+
+import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,11 +26,11 @@ import static fr.inria.atlanmod.commons.Preconditions.checkNotNull;
 public class NLUServerIntentMapper {
 
     /**
-     * The {@link DialogFlowConfiguration}.
+     * The {@link NLUServerConfiguration}.
      * <p>
      * This configuration is used to retrieve the DialogFlow project ID, and use it to generate the {@link Intent} name.
      */
-    private DialogFlowConfiguration configuration;
+    private NLUServerConfiguration configuration;
 
     /**
      * The {@link DialogFlowEntityReferenceMapper} used to map accesses to {@link com.xatkit.intent.EntityDefinition}s.
@@ -222,7 +222,7 @@ public class NLUServerIntentMapper {
      */
     private List<Context> createOutContexts(@NonNull IntentDefinition intentDefinition)
             throws IntentRecognitionProviderException {
-        DialogFlowCheckingUtils.checkParameters(intentDefinition);
+        NLUServerCheckingUtils.checkParameters(intentDefinition);
         ContextName contextName = ContextName.of(this.configuration.getProjectId(),
                 SessionName.of(this.configuration.getProjectId(), "setup").getSession(), "Xatkit");
         // TODO check if 2 is fine here

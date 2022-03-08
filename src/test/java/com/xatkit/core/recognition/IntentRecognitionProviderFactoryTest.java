@@ -3,7 +3,6 @@ package com.xatkit.core.recognition;
 import com.xatkit.AbstractXatkitTest;
 import com.xatkit.core.EventDefinitionRegistry;
 import com.xatkit.core.XatkitBot;
-import com.xatkit.core.recognition.dialogflow.DialogFlowIntentRecognitionProvider;
 import com.xatkit.core.recognition.dialogflow.DialogFlowIntentRecognitionProviderTest;
 import com.xatkit.core.server.XatkitServer;
 import org.apache.commons.configuration2.Configuration;

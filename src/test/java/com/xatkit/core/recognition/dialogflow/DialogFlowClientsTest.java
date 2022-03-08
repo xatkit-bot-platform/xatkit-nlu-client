@@ -1,6 +1,7 @@
 package com.xatkit.core.recognition.dialogflow;
 
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
+import com.xatkit.core.recognition.nluserver.NLUServerClientAPIWrapper;
 import com.xatkit.test.util.VariableLoaderHelper;
 import org.apache.commons.configuration2.BaseConfiguration;
 import org.apache.commons.configuration2.Configuration;
@@ -15,7 +16,7 @@ public class DialogFlowClientsTest {
 
     private DialogFlowConfiguration validConfiguration;
 
-    private DialogFlowClients dialogFlowClients;
+    private NLUServerClientAPIWrapper dialogFlowClients;
 
     @Before
     public void setUp() {
@@ -36,12 +37,12 @@ public class DialogFlowClientsTest {
 
     @Test(expected = NullPointerException.class)
     public void constructNullConfiguration() throws IntentRecognitionProviderException {
-        dialogFlowClients = new DialogFlowClients(null);
+        dialogFlowClients = new NLUServerClientAPIWrapper(null);
     }
 
     @Test
     public void constructValidConfiguration() throws IntentRecognitionProviderException {
-        dialogFlowClients = new DialogFlowClients(validConfiguration);
+        dialogFlowClients = new NLUServerClientAPIWrapper(validConfiguration);
         assertThat(dialogFlowClients).isNotNull();
         assertThat(dialogFlowClients.isShutdown()).isFalse();
         assertThat(dialogFlowClients.getAgentsClient()).isNotNull();
@@ -59,12 +60,12 @@ public class DialogFlowClientsTest {
         Configuration configuration = this.validConfiguration.getBaseConfiguration();
         configuration.setProperty(DialogFlowConfiguration.GOOGLE_CREDENTIALS_PATH_KEY, null);
         DialogFlowConfiguration dialogFlowConfiguration = new DialogFlowConfiguration(configuration);
-        dialogFlowClients = new DialogFlowClients(dialogFlowConfiguration);
+        dialogFlowClients = new NLUServerClientAPIWrapper(dialogFlowConfiguration);
     }
 
     @Test
     public void shutdown() throws IntentRecognitionProviderException {
-        dialogFlowClients = new DialogFlowClients(validConfiguration);
+        dialogFlowClients = new NLUServerClientAPIWrapper(validConfiguration);
         dialogFlowClients.shutdown();
         assertThat(dialogFlowClients.isShutdown()).isTrue();
         assertThat(dialogFlowClients.getAgentsClient().isShutdown()).isTrue();

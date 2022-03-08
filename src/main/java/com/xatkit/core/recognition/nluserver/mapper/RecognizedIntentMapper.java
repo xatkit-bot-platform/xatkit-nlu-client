@@ -1,4 +1,4 @@
-package com.xatkit.core.recognition.dialogflow.mapper;
+package com.xatkit.core.recognition.nluserver.mapper;
 
 import com.google.cloud.dialogflow.v2.Context;
 import com.google.cloud.dialogflow.v2.ContextName;

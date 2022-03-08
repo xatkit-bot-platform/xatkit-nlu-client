@@ -1,4 +1,4 @@
-package com.xatkit.core.recognition.dialogflow;
+package com.xatkit.core.recognition.nluserver.mapper;
 
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.intent.ContextParameter;
@@ -15,12 +15,12 @@ import java.util.Optional;
 /**
  * An utility class that provides checking methods for DialogFlow models.
  */
-public final class DialogFlowCheckingUtils {
+public final class NLUServerCheckingUtils {
 
     /**
      * Disables the default constructor, this class only provides static methods and should not be constructed.
      */
-    private DialogFlowCheckingUtils() {
+    private NLUServerCheckingUtils() {
     }
 
     /**

@@ -1,12 +1,14 @@
-package com.xatkit.core.recognition.dialogflow.mapper;
+package com.xatkit.core.recognition.nluserver.mapper;
 
-import com.google.cloud.dialogflow.v2.EntityType;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.CompositeEntityDefinition;
 import com.xatkit.intent.CustomEntityDefinition;
 import com.xatkit.intent.EntityDefinition;
 import com.xatkit.intent.MappingEntityDefinition;
 import com.xatkit.intent.MappingEntityDefinitionEntry;
+import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityReferenceMapper;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityTypeEntry;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import lombok.NonNull;
 
 import java.text.MessageFormat;
@@ -14,39 +16,38 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Maps {@link EntityDefinition} instances to DialogFlow {@link EntityType}s.
+ * Maps {@link EntityDefinition} instances to Xatkit NLUServer {@link EntityType}s.
  * <p>
  * This class is used to translate generic {@link EntityDefinition}s to platform-specific construct representing
- * DialogFlow entities.
+ * Xatkit NLUServer entities.
  * <p>
  * <b>Note</b>: this class does not create references to existing entities, see
- * {@link DialogFlowEntityReferenceMapper} for more information.
+ * {@link NLUServerEntityReferenceMapper} for more information.
  *
- * @see NLUServerReferenceMapper
  */
 public class NLUServerEntityMapper {
 
     /**
-     * The {@link DialogFlowEntityReferenceMapper} used to map internal references to other entities.
+     * The {@link NLUServerEntityReferenceMapper} used to map internal references to other entities.
      * <p>
      * These references are typically found in {@link CompositeEntityDefinition}s, that can contain other entities as
      * part of their values.
      */
-    private DialogFlowEntityReferenceMapper entityReferenceMapper;
+    private NLUServerEntityReferenceMapper entityReferenceMapper;
 
     /**
      * Constructs a {@link NLUServerEntityMapper} with the provided {@code entityReferenceMapper}.
      *
-     * @param entityReferenceMapper the {@link DialogFlowEntityReferenceMapper} used to map internal references to
+     * @param entityReferenceMapper the {@link NLUServerEntityReferenceMapper} used to map internal references to
      *                              other entities
      * @throws NullPointerException if the provided {@code entityReferenceMapper} is {@code null}
      */
-    public NLUServerEntityMapper(@NonNull DialogFlowEntityReferenceMapper entityReferenceMapper) {
+    public NLUServerEntityMapper(@NonNull NLUServerEntityReferenceMapper entityReferenceMapper) {
         this.entityReferenceMapper = entityReferenceMapper;
     }
 
     /**
-     * Maps the provided {@code entityDefinition} to a DialogFlow {@link EntityType}.
+     * Maps the provided {@code entityDefinition} to a NLUServer {@link EntityType}.
      * <p>
      * This method does not support {@link BaseEntityDefinition}s, because base entities are already deployed in
      * DialogFlow agents (and called system entities).
@@ -73,17 +74,18 @@ public class NLUServerEntityMapper {
     }
 
     /**
-     * Creates a DialogFlow {@link EntityType} from the provided {@code customEntityDefinition}.
+     * Creates a Xatkit NLUServer {@link EntityType} from the provided {@code customEntityDefinition}.
      *
      * @param customEntityDefinition the {@link CustomEntityDefinition} to create an {@link EntityType} from
      * @return the created {@link EntityType}
      * @throws NullPointerException     if the provided {@code entityDefinition} is {@code null}
      * @throws IllegalArgumentException if the {@code customEntityDefinition}'s type is not supported
      * @see #createEntitiesForMapping(MappingEntityDefinition)
-     * @see #createEntitiesForComposite(CompositeEntityDefinition)
      */
     private EntityType mapCustomEntityDefinition(@NonNull CustomEntityDefinition customEntityDefinition) {
-        String entityName = customEntityDefinition.getName();
+      /* TO IMPLEMENT
+
+      String entityName = customEntityDefinition.getName();
         EntityType.Builder builder = EntityType.newBuilder().setDisplayName(entityName);
         if (customEntityDefinition instanceof MappingEntityDefinition) {
             MappingEntityDefinition mappingEntityDefinition = (MappingEntityDefinition) customEntityDefinition;
@@ -98,30 +100,36 @@ public class NLUServerEntityMapper {
                     customEntityDefinition.getClass().getSimpleName(), EntityDefinition.class.getSimpleName()));
         }
         return builder.build();
+
+       */
+        return null;
     }
 
     /**
-     * Creates the DialogFlow {@link EntityType.Entity} instances from the provided {@code mappingEntityDefinition}.
+     * Creates the Xatkit NLUServer {@link CustomEntityTypeEntry} instances from the provided {@code
+     * mappingEntityDefinition}.
      * <p>
-     * {@link EntityType.Entity} instances are created from the provided {@link MappingEntityDefinition}'s entries,
-     * and contain the specified <i>referredValue</i> as well as the list of <i>synonyms</i>. The created
-     * {@link EntityType.Entity} instances correspond to DialogFlow's
-     * <a href="https://dialogflow.com/docs/entities/developer-entities#developer_mapping">Developer Mapping
-     * Entities</a>.
+     * {@link CustomEntityTypeEntry} instances are created from the provided {@link MappingEntityDefinition}'s entries,
+     * and contain the specified <i>referredValue</i> as well as the list of <i>synonyms</i>.
      *
-     * @param mappingEntityDefinition the {@link MappingEntityDefinition} to create the {@link EntityType.Entity}
+     * @param mappingEntityDefinition the {@link MappingEntityDefinition} to create the {@link CustomEntityTypeEntry}
      *                                instances from
-     * @return the created {@link List} of DialogFlow {@link EntityType.Entity} instances
+     * @return the created {@link List} of NLUServer {@link CustomEntityTypeEntry} instances
      * @throws NullPointerException if the provided {@code mappingEntityDefinition} is {@code null}
      */
-    private List<EntityType.Entity> createEntitiesForMapping(@NonNull MappingEntityDefinition mappingEntityDefinition) {
+    private List<CustomEntityTypeEntry> createEntitiesForMapping(@NonNull MappingEntityDefinition mappingEntityDefinition) {
+        /* TO IMPLEMENT
         List<EntityType.Entity> entities = new ArrayList<>();
+
         for (MappingEntityDefinitionEntry entry : mappingEntityDefinition.getEntries()) {
             EntityType.Entity.Builder builder = EntityType.Entity.newBuilder().setValue(entry.getReferenceValue())
                     .addAllSynonyms(entry.getSynonyms()).addSynonyms(entry.getReferenceValue());
             entities.add(builder.build());
         }
         return entities;
+
+         */
+        return null;
     }
 
 

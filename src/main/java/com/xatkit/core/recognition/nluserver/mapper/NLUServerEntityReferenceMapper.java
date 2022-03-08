@@ -1,6 +1,7 @@
-package com.xatkit.core.recognition.dialogflow.mapper;
+package com.xatkit.core.recognition.nluserver.mapper;
 
 import com.xatkit.core.recognition.EntityMapper;
+import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
 import com.xatkit.intent.CustomEntityDefinition;
 import com.xatkit.intent.EntityDefinition;
 
@@ -61,15 +62,15 @@ import static com.xatkit.intent.EntityType.ZIP_CODE;
 /**
  * An {@link EntityMapper} initialized with DialogFlow's system entities.
  * <p>
- * This class provides a mapping of {@link com.xatkit.intent.EntityType}s to DialogFlow's system entities. Mapped
+ * This class provides a mapping of {@link com.xatkit.intent.EntityType}s to Xatkit's NLU Server system entities. Mapped
  * entities can be accessed by calling {@link #getMappingFor(EntityDefinition)}.
  */
-public class DialogFlowEntityReferenceMapper extends EntityMapper {
+public class NLUServerEntityReferenceMapper extends EntityMapper {
 
     /**
-     * Constructs a {@link DialogFlowEntityReferenceMapper} initialized with DialogFlow's system entities.
+     * Constructs a {@link NLUServerEntityReferenceMapper} initialized with DialogFlow's system entities.
      */
-    public DialogFlowEntityReferenceMapper() {
+    public NLUServerEntityReferenceMapper() {
         super();
         this.registerDateTimeEntities();
         this.registerNumberEntities();
@@ -77,7 +78,6 @@ public class DialogFlowEntityReferenceMapper extends EntityMapper {
         this.registerGeographyEntities();
         this.registerContactEntities();
         this.registerNamesEntities();
-        this.registerMusicEntities();
         this.registerOtherEntities();
         this.registerGenericEntities();
         this.setFallbackEntityMapping("@sys.any");
@@ -87,29 +87,37 @@ public class DialogFlowEntityReferenceMapper extends EntityMapper {
      * Registers Date and Time-related entities.
      */
     private void registerDateTimeEntities() {
+      /* TO IMPLEMENT
         this.addEntityMapping(DATE_TIME, "@sys.date-time");
         this.addEntityMapping(DATE, "@sys.date");
         this.addEntityMapping(DATE_PERIOD, "@sys.date-period");
         this.addEntityMapping(TIME, "@sys.time");
         this.addEntityMapping(TIME_PERIOD, "@sys.time-period");
+
+       */
     }
 
     /**
      * Registers Number-related entities.
      */
     private void registerNumberEntities() {
+        /* TO IMPLEMENT
         this.addEntityMapping(NUMBER, "@sys.number");
         this.addEntityMapping(CARDINAL, "@sys.cardinal");
         this.addEntityMapping(ORDINAL, "@sys.ordinal");
         this.addEntityMapping(INTEGER, "@sys.number-integer");
         this.addEntityMapping(NUMBER_SEQUENCE, "@sys.number-sequence");
         this.addEntityMapping(FLIGHT_NUMBER, "@sys.flight-number");
+
+         */
     }
 
     /**
      * Registers Amount-related entities.
      */
+
     private void registerAmountEntities() {
+        /* TO IMPLEMENT
         this.addEntityMapping(UNIT_AREA, "@sys.unit-area");
         this.addEntityMapping(UNIT_CURRENCY, "@sys.unit-currency");
         this.addEntityMapping(UNIT_LENGTH, "@sys.unit-length");
@@ -121,12 +129,15 @@ public class DialogFlowEntityReferenceMapper extends EntityMapper {
         this.addEntityMapping(TEMPERATURE, "@sys.temperature");
         this.addEntityMapping(DURATION, "@sys.duration");
         this.addEntityMapping(AGE, "@sys.age");
+
+         */
     }
 
     /**
      * Registers Geography-related entities.
      */
     private void registerGeographyEntities() {
+        /* TO IMPLEMENT
         this.addEntityMapping(ADDRESS, "@sys.address");
         this.addEntityMapping(STREET_ADDRESS, "@sys.street-address");
         this.addEntityMapping(ZIP_CODE, "@sys.zip-code");
@@ -146,75 +157,61 @@ public class DialogFlowEntityReferenceMapper extends EntityMapper {
         this.addEntityMapping(PLACE_ATTRACTION, "@sys.place-attraction");
         this.addEntityMapping(AIRPORT, "@sys.airport");
         this.addEntityMapping(LOCATION, "@sys.location");
+
+         */
     }
 
     /**
      * Registers Contact-related entities.
      */
     private void registerContactEntities() {
+        /* TO IMPLEMENT
         this.addEntityMapping(EMAIL, "@sys.email");
         this.addEntityMapping(PHONE_NUMBER, "@sys.phone-number");
+
+         */
     }
 
     /**
      * Registers Names-related entities.
      */
     private void registerNamesEntities() {
+        /* TO IMPLEMENT
         this.addEntityMapping(GIVEN_NAME, "@sys.given-name");
         this.addEntityMapping(LAST_NAME, "@sys.last-name");
-    }
 
-    /**
-     * Registers Music-related entities.
-     */
-    private void registerMusicEntities() {
-        this.addEntityMapping(MUSIC_ARTIST, "@sys.music-artist");
-        this.addEntityMapping(MUSIC_GENRE, "@sys.music-genre");
+         */
     }
 
     /**
      * Registers other entities.
      */
     private void registerOtherEntities() {
+        /* TO IMPLEMENT
         this.addEntityMapping(COLOR, "@sys.color");
         this.addEntityMapping(LANGUAGE, "@sys.language");
+
+         */
     }
 
     /**
      * Registers generic entities.
      */
     private void registerGenericEntities() {
+        /* TO IMPLEMENT
         this.addEntityMapping(ANY, "@sys.any");
         this.addEntityMapping(URL, "@sys.url");
+
+         */
     }
 
-    /**
-     * This method is disabled for {@link DialogFlowEntityReferenceMapper}.
-     * <p>
-     * DialogFlow entities are registered independently from the intents. This two-step process allows to reference
-     * entities with their names, and do not require to store any mapping information in the
-     * {@link DialogFlowEntityReferenceMapper}.
-     *
-     * @param entityDefinition the {@link CustomEntityDefinition} to map
-     * @param concreteEntity   the mapped value associated to the provided {@code entityDefinition}
-     */
-    @Override
-    public void addCustomEntityMapping(CustomEntityDefinition entityDefinition, String concreteEntity) {
-        /*
-         * Supporting this would imply to populate the DialogFlowEntityMapper when loading an existing agent. There
-         * is no need for such feature for now.
-         */
-        throw new UnsupportedOperationException(MessageFormat.format("{0} does not allow to register custom entity "
-                        + "mappings, use getMappingFor(EntityDefinition) to get DialogFlow-compatible mapping of {1}",
-                this.getClass().getSimpleName(), CustomEntityDefinition.class.getSimpleName()));
-    }
 
     /**
      * Maps the provided {@code customEntityDefinition} to its DialogFlow implementation.
      * <p>
      * DialogFlow entities are registered independently from the intents. This two-step process allows to reference
      * entities with their names, and do not require to store any mapping information in the
-     * {@link DialogFlowEntityReferenceMapper}.
+     * {@link NLUServerEntityReferenceMapper}.
      *
      * @param customEntityDefinition the {@link CustomEntityDefinition} to retrieve the concrete entity
      *                               {@link String} from

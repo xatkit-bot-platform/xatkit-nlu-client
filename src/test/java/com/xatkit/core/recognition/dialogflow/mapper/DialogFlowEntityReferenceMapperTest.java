@@ -1,5 +1,6 @@
 package com.xatkit.core.recognition.dialogflow.mapper;
 
+import com.xatkit.core.recognition.nluserver.mapper.DialogFlowEntityReferenceMapper;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.EntityType;
 import com.xatkit.intent.IntentFactory;

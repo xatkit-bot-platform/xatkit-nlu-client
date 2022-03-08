@@ -1,16 +1,5 @@
-package com.xatkit.core.recognition.dialogflow;
+package com.xatkit.core.recognition.nluserver;
 
-import com.google.api.gax.core.CredentialsProvider;
-import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.dialogflow.v2.AgentsClient;
-import com.google.cloud.dialogflow.v2.AgentsSettings;
-import com.google.cloud.dialogflow.v2.EntityTypesClient;
-import com.google.cloud.dialogflow.v2.EntityTypesSettings;
-import com.google.cloud.dialogflow.v2.IntentsClient;
-import com.google.cloud.dialogflow.v2.IntentsSettings;
-import com.google.cloud.dialogflow.v2.SessionsClient;
-import com.google.cloud.dialogflow.v2.SessionsSettings;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.util.FileUtils;
 import fr.inria.atlanmod.commons.log.Log;
@@ -38,7 +27,7 @@ import static java.util.Objects.nonNull;
  * to load it from environment variables.
  */
 @Value
-public class DialogFlowClients {
+public class NLUServerClientAPIWrapper {
 
     /**
      * The client instance managing DialogFlow agent-related queries.
@@ -48,29 +37,6 @@ public class DialogFlowClients {
      */
     private AgentsClient agentsClient;
 
-    /**
-     * The client instance managing DialogFlow intent-related queries.
-     * <p>
-     * This client is used to compute intent-level operations, such as retrieving the list of registered
-     * intents, or deleting specific intents.
-     */
-    private IntentsClient intentsClient;
-
-    /**
-     * The client instance managing DialogFlow entity-related queries.
-     * <p>
-     * This client is used to compute entity-level operations, such as retrieving the list of registered
-     * {@link com.google.cloud.dialogflow.v2.EntityType.Entity} instances, or deleting specific
-     * {@link com.google.cloud.dialogflow.v2.EntityType.Entity}.
-     */
-    private EntityTypesClient entityTypesClient;
-
-    /**
-     * The client instance managing DialogFlow sessions.
-     * <p>
-     * This instance is used to initiate new sessions and send intent detection queries to the DialogFlow engine.
-     */
-    private SessionsClient sessionsClient;
 
     /**
      * Initializes the DialogFlow clients using the provided {@code configuration}.
@@ -87,7 +53,7 @@ public class DialogFlowClients {
      *                                            GOOGLE_APPLICATION_CREDENTIALS} environment variable does not
      *                                            contain a valid credentials file path
      */
-    public DialogFlowClients(@NonNull DialogFlowConfiguration configuration) throws IntentRecognitionProviderException {
+    public NLUServerClientAPIWrapper(@NonNull DialogFlowConfiguration configuration) throws IntentRecognitionProviderException {
         CredentialsProvider credentialsProvider = getCredentialsProvider(configuration);
         AgentsSettings agentsSettings;
         IntentsSettings intentsSettings;
@@ -170,44 +136,5 @@ public class DialogFlowClients {
         }
     }
 
-    /**
-     * Creates the Google's {@link CredentialsProvider} from the provided {@code configuration}.
-     * <p>
-     * This method loads the credentials file located at {@link DialogFlowConfiguration#getGoogleCredentialsPath()}.
-     * If the file does not exist the method attempts to load it from the classpath.
-     * <p>
-     * This method returns {@code null} if the provided {@code configuration} does not contain a path.
-     *
-     * @param configuration the {@link DialogFlowConfiguration} containing the credentials file path
-     * @return the created {@link CredentialsProvider}, or {@code null} if the provided {@code configuration} does
-     * not specify a credentials file path
-     * @throws IntentRecognitionProviderException if an error occurred when loading the credentials file
-     */
-    private @Nullable
-    CredentialsProvider getCredentialsProvider(@NonNull DialogFlowConfiguration configuration)
-            throws IntentRecognitionProviderException {
-        String credentialsPath = configuration.getGoogleCredentialsPath();
-        if (nonNull(credentialsPath)) {
-            Log.info("Loading Google Credentials file {0}", credentialsPath);
-            InputStream credentialsInputStream;
-            try {
-                File credentialsFile = FileUtils.getFile(credentialsPath, configuration.getBaseConfiguration());
-                if (credentialsFile.exists()) {
-                    credentialsInputStream = new FileInputStream(credentialsFile);
-                } else {
-                    Log.warn("Cannot load the credentials file at {0}, trying to load it from the classpath",
-                            credentialsPath);
-                    credentialsInputStream = this.getClass().getClassLoader().getResourceAsStream(credentialsPath);
-                }
-                return FixedCredentialsProvider.create(GoogleCredentials.fromStream(credentialsInputStream));
-            } catch (FileNotFoundException e) {
-                throw new IntentRecognitionProviderException(MessageFormat.format("Cannot find the credentials file "
-                        + "at {0}", credentialsPath), e);
-            } catch (IOException e) {
-                throw new IntentRecognitionProviderException("Cannot retrieve the credentials provider, see attached "
-                        + "exception", e);
-            }
-        }
-        return null;
-    }
+
 }

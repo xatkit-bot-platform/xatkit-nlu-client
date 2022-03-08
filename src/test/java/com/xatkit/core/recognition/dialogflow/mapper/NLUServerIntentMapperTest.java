@@ -3,6 +3,7 @@ package com.xatkit.core.recognition.dialogflow.mapper;
 import com.google.cloud.dialogflow.v2.Intent;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.dialogflow.DialogFlowConfiguration;
+import com.xatkit.core.recognition.nluserver.mapper.DialogFlowEntityReferenceMapper;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.DialogFlowIntentMapper;
 import com.xatkit.intent.ContextParameter;
 import com.xatkit.intent.IntentDefinition;

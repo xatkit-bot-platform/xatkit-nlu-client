@@ -1,7 +1,7 @@
 package com.xatkit.core.recognition.dialogflow.stubs;
 
 import com.google.cloud.dialogflow.v2.SessionName;
-import com.xatkit.core.recognition.dialogflow.DialogFlowStateContext;
+import com.xatkit.core.recognition.nluserver.NLUServerClientAPIWrapper;
 import com.xatkit.intent.IntentDefinition;
 import com.xatkit.stubs.TestingStateContext;
 import lombok.NonNull;
@@ -12,7 +12,7 @@ import lombok.NonNull;
  * <p>
  * This testing context wraps a {@link DialogFlowStateContext} instance and delegates DialogFlow-specific operations
  * to it (e.g. {@link #getSessionName()}). This wrapping is required because
- * {@link com.xatkit.core.recognition.dialogflow.DialogFlowClients} only works with valid non-stubbed DialogFlow
+ * {@link NLUServerClientAPIWrapper} only works with valid non-stubbed DialogFlow
  * {@link SessionName}s.
  * <p>
  * See the documentation of {@link TestingStateContext} for more information on intent matching configuration.

@@ -1,6 +1,5 @@
 package com.xatkit.core.recognition.dialogflow.stubs;
 
-import com.xatkit.core.recognition.dialogflow.DialogFlowStateContext;
 import com.xatkit.execution.StateContext;
 import com.xatkit.stubs.TestingStateContext;
 import com.xatkit.stubs.TestingStateContextFactory;
