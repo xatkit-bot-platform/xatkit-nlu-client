@@ -37,7 +37,7 @@ public class Intent {
     /**
      * @param trainingSentences the trainingSentences to set
      */
-    public void setTrainingSentences(List<String> trainingSentences) {
+    public void addAllTrainingSentences(List<String> trainingSentences) {
         this.trainingSentences = trainingSentences;
     }
 

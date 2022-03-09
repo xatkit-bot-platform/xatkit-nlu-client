@@ -33,31 +33,31 @@ public class NLUServerIntentMapper {
     private NLUServerConfiguration configuration;
 
     /**
-     * The {@link DialogFlowEntityReferenceMapper} used to map accesses to {@link com.xatkit.intent.EntityDefinition}s.
+     * The {@link NLUServerEntityReferenceMapper} used to map accesses to {@link com.xatkit.intent.EntityDefinition}s.
      * <p>
      * These accesses exist in {@link IntentDefinition} that create a context, and set a parameter with an entity
      * (system, mapping, or composite).
      */
-    private DialogFlowEntityReferenceMapper dialogFlowEntityReferenceMapper;
+    private NLUServerEntityReferenceMapper nluServerEntityReferenceMapper;
 
     /**
      * Constructs a {@link NLUServerIntentMapper} with the provided {@code configuration} and {@code
      * dialogFlowEntityReferenceMapper}.
      *
-     * @param configuration                   the {@link DialogFlowConfiguration}
-     * @param dialogFlowEntityReferenceMapper the {@link DialogFlowEntityReferenceMapper} used to map accesses to
+     * @param configuration                   the {@link NLUServerConfiguration}
+     * @param nluServerEntityReferenceMapper the {@link NLUServerEntityReferenceMapper} used to map accesses to
      *                                        {@link com.xatkit.intent.EntityDefinition}s
      * @throws NullPointerException if the provided {@code configuration} or {@code dialogFlowEntityReferenceMapper}
      *                              is {@code null}
      */
-    public NLUServerIntentMapper(@NonNull DialogFlowConfiguration configuration,
-                                 @NonNull DialogFlowEntityReferenceMapper dialogFlowEntityReferenceMapper) {
+    public NLUServerIntentMapper(@NonNull NLUServerConfiguration configuration,
+                                 @NonNull NLUServerEntityReferenceMapper nluServerEntityReferenceMapper) {
         this.configuration = configuration;
-        this.dialogFlowEntityReferenceMapper = dialogFlowEntityReferenceMapper;
+        this.nluServerEntityReferenceMapper = nluServerEntityReferenceMapper;
     }
 
     /**
-     * Maps the provided {@link IntentDefinition} to a DialogFlow {@link Intent}.
+     * Maps the provided {@link IntentDefinition} to a Xatkit NLUServer {@link Intent}.
      * <p>
      * This method sets the name of the created intent, its training sentences, and the context(s) associated to its
      * parameters. Note that this method does not check whether access {@link com.xatkit.intent.EntityDefinition}s
@@ -73,21 +73,18 @@ public class NLUServerIntentMapper {
             throws IntentRecognitionProviderException {
         checkNotNull(intentDefinition.getName(), "Cannot map the %s with the provided name %s",
                 IntentDefinition.class.getSimpleName(), intentDefinition.getName());
-        Intent.Builder builder = Intent.newBuilder()
-                .setDisplayName(adaptIntentDefinitionNameToDialogFlow(intentDefinition.getName()));
-        List<Intent.TrainingPhrase> trainingPhrases = createTrainingPhrases(intentDefinition);
-        builder.addAllTrainingPhrases(trainingPhrases);
-        List<String> inContextNames = createInContextNames(intentDefinition);
+        Intent nluIntent = new Intent(adaptIntentDefinitionNameToNLUServer(intentDefinition.getName()));
+
+        nluIntent.addAllTrainingSentences(createTrainingPhrases(intentDefinition));
+
+       /* List<String> inContextNames = createInContextNames(intentDefinition);
         builder.addAllInputContextNames(inContextNames);
         List<Context> outContexts = createOutContexts(intentDefinition);
         builder.addAllOutputContexts(outContexts);
         List<Intent.Parameter> parameters = createParameters(intentDefinition);
         builder.addAllParameters(parameters);
-        /*
-         * We need to set an empty list for messages.
-         */
-        builder.addAllMessages(new ArrayList<>());
-        return builder.build();
+        */
+        return nluIntent;
     }
 
 
@@ -99,7 +96,7 @@ public class NLUServerIntentMapper {
      * @return the adapted {@code intentDefinitionName}
      * @throws NullPointerException if the provided {@code name} is {@code null}
      */
-    private String adaptIntentDefinitionNameToDialogFlow(@NonNull String name) {
+    private String adaptIntentDefinitionNameToNLUServer(@NonNull String name) {
         return name.replaceAll("_", " ");
     }
 
@@ -108,26 +105,27 @@ public class NLUServerIntentMapper {
      * intentDefinition}.
      *
      * @param intentDefinition the {@link IntentDefinition} to create the
-     *                         {@link com.google.cloud.dialogflow.v2.Intent.TrainingPhrase}s from
-     * @return the created {@link com.google.cloud.dialogflow.v2.Intent.TrainingPhrase}s
+     *                         {@link String} Training Phrases from
+     * @return the created {@link String} Training Phrases
      * @throws NullPointerException if the provided {@code intentDefinition} is {@code null}
      */
-    private List<Intent.TrainingPhrase> createTrainingPhrases(@NonNull IntentDefinition intentDefinition) {
-        List<Intent.TrainingPhrase> trainingPhrases = new ArrayList<>();
+    private List<String> createTrainingPhrases(@NonNull IntentDefinition intentDefinition) {
+        List<String> trainingPhrases = new ArrayList<>();
         for (String trainingSentence : intentDefinition.getTrainingSentences()) {
-            trainingPhrases.add(createTrainingPhrase(trainingSentence, intentDefinition.getParameters()));
+            trainingPhrases.add(trainingSentence); // For now we stick to the version without parameters
+           // trainingPhrases.add(createTrainingPhrase(trainingSentence, intentDefinition.getParameters()));
         }
         return trainingPhrases;
     }
 
     /**
-     * Creates a single {@link com.google.cloud.dialogflow.v2.Intent.TrainingPhrase} from the provided {@code
+     * Creates a single {@link String} TrainingPhrase from the provided {@code
      * trainingSentence} and {@code outContexts}.
      * <p>
      * This method looks for {@link com.xatkit.intent.EntityDefinition} accesses in the provided {@code
      * trainingSentence} and checks them against the provided {@code outContexts} (by checking the context
      * parameter's text fragment). These {@link com.xatkit.intent.EntityDefinition} accesses are then translated into
-     * references using the {@link DialogFlowEntityReferenceMapper}.
+     * references using the {@link NLUServerEntityReferenceMapper}.
      *
      * @param trainingSentence the {@link IntentDefinition}'s training sentence to create a
      *                         {@link com.google.cloud.dialogflow.v2.Intent.TrainingPhrase} from
@@ -139,7 +137,7 @@ public class NLUServerIntentMapper {
      *                              {@code outContexts} is {@code null}
      * @see DialogFlowEntityReferenceMapper
      */
-    private Intent.TrainingPhrase createTrainingPhrase(@NonNull String trainingSentence,
+    /*private Intent.TrainingPhrase createTrainingPhrase(@NonNull String trainingSentence,
                                                        @NonNull List<ContextParameter> parameters) {
         if (parameters.isEmpty()) {
             return Intent.TrainingPhrase.newBuilder().addParts(Intent.TrainingPhrase.Part.newBuilder().setText(
@@ -151,7 +149,7 @@ public class NLUServerIntentMapper {
              * needed, and sent to the DialogFlow API.
              * We use this two-step process for simplicity. If the performance of TrainingPhrase creation become an
              * issue we can reshape this method to avoid this pre-processing phase.
-             */
+
             String preparedTrainingSentence = trainingSentence;
             for (ContextParameter parameter : parameters) {
                 for (String textFragment : parameter.getTextFragments()) {
@@ -161,9 +159,7 @@ public class NLUServerIntentMapper {
                     }
                 }
             }
-            /*
-             * Process the pre-processed String and bind its entities.
-             */
+            // Process the pre-processed String and bind its entities.
             String[] splitTrainingSentence = preparedTrainingSentence.split("#");
             Intent.TrainingPhrase.Builder trainingPhraseBuilder = Intent.TrainingPhrase.newBuilder();
             for (int i = 0; i < splitTrainingSentence.length; i++) {
@@ -189,47 +185,7 @@ public class NLUServerIntentMapper {
             return trainingPhraseBuilder.build();
         }
     }
-
-    /**
-     * Creates the DialogFlow input {@link Context} names for the provided {@code intentDefinition}.
-     * <p>
-     * This method creates an input {@link Context} for every {@link IntentDefinition}. This means that these intents
-     * can be matched iff the input context is set in the DialogFlow session.
-     * <p>
-     * This method returns an empty {@link List} if the provided {@code intentDefinition} is a top-level intent.
-     *
-     * @param intentDefinition the {@link IntentDefinition} to create the DialogFlow input {@link Context}s from
-     * @return the created {@link List} of DialogFlow {@link Context} identifiers
-     * @throws NullPointerException if the provided {@code intentDefinition} is {@code null}
-     */
-    private List<String> createInContextNames(@NonNull IntentDefinition intentDefinition) {
-        List<String> results = new ArrayList<>();
-        ContextName contextName = ContextName.of(this.configuration.getProjectId(),
-                SessionName.of(this.configuration.getProjectId(), "setup").getSession(),
-                "Enable" + intentDefinition.getName());
-        results.add(contextName.toString());
-        return results;
-    }
-
-    /**
-     * Creates the DialogFlow output {@link Context}s from the provided {@code intentDefinition}.
-     *
-     * @param intentDefinition the {@link IntentDefinition} to create the DialogFlow output {@link Context}s from
-     * @return the created {@link List} of DialogFlow {@link Context}s
-     * @throws NullPointerException               if the provided {@code intentDefinition} is {@code null}
-     * @throws IntentRecognitionProviderException if there is no training sentence containing a provided {@code
-     *                                            intentDefinition}'s parameter fragment
-     */
-    private List<Context> createOutContexts(@NonNull IntentDefinition intentDefinition)
-            throws IntentRecognitionProviderException {
-        NLUServerCheckingUtils.checkParameters(intentDefinition);
-        ContextName contextName = ContextName.of(this.configuration.getProjectId(),
-                SessionName.of(this.configuration.getProjectId(), "setup").getSession(), "Xatkit");
-        // TODO check if 2 is fine here
-        Context dialogFlowContext = Context.newBuilder().setName(contextName.toString()).setLifespanCount(2).build();
-        // TODO should we return a single context if it's always a singleton list?
-        return Collections.singletonList(dialogFlowContext);
-    }
+    */
 
     /**
      * Creates the DialogFlow context parameters from the provided Xatkit {@code intentDefinition}.
@@ -241,6 +197,7 @@ public class NLUServerIntentMapper {
      * @throws NullPointerException if the provided {@code contexts} {@link List} is {@code null}, or if one of the
      *                              provided {@link ContextParameter}'s name is {@code null}
      */
+    /* TODO
     private List<Intent.Parameter> createParameters(@NonNull IntentDefinition intentDefinition) {
         List<Intent.Parameter> results = new ArrayList<>();
         for (ContextParameter contextParameter : intentDefinition.getParameters()) {
@@ -249,9 +206,7 @@ public class NLUServerIntentMapper {
                     contextParameter, contextParameter.getName());
             String dialogFlowEntity =
                     dialogFlowEntityReferenceMapper.getMappingFor(contextParameter.getEntity().getReferredEntity());
-            /*
-             * DialogFlow parameters are prefixed with a '$'.
-             */
+            // DialogFlow parameters are prefixed with a '$'.
             Intent.Parameter parameter = Intent.Parameter.newBuilder().setDisplayName(contextParameter.getName())
                     .setEntityTypeDisplayName(dialogFlowEntity).setValue("$" + contextParameter.getName()).build();
             Optional<Intent.Parameter> parameterAlreadyRegistered =
@@ -263,7 +218,7 @@ public class NLUServerIntentMapper {
                  * the training sentence.
                  * If the parameter is added the agent seems to work fine, but there is an error message
                  * "Parameter name must be unique within the action" in the corresponding intent page.
-                 */
+
                 Log.warn("Parameter {0} is defined multiple times", parameter.getDisplayName());
             } else {
                 results.add(parameter);
@@ -271,5 +226,5 @@ public class NLUServerIntentMapper {
         }
 //        }
         return results;
-    }
+    } */
 }

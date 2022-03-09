@@ -7,6 +7,7 @@ import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.RecognitionMonitor;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
+import com.xatkit.execution.ExecutionFactory;
 import com.xatkit.execution.StateContext;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.CompositeEntityDefinition;
@@ -18,17 +19,18 @@ import com.xatkit.intent.RecognizedIntent;
 import fr.inria.atlanmod.commons.log.Log;
 import lombok.NonNull;
 import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.ConfigurationConverter;
 
 import javax.annotation.Nullable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static fr.inria.atlanmod.commons.Preconditions.checkArgument;
 import static fr.inria.atlanmod.commons.Preconditions.checkNotNull;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 /**
@@ -49,7 +51,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     /**
      * The clients used to access the DialogFlow API.
      */
-    private DialogFlowClients dialogFlowClients;
+    private NLUServerClientAPIWrapper nluServerClientWrapper;
 
     /**
      * Represents the DialogFlow project name.
@@ -150,30 +152,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         this.recognitionMonitor = recognitionMonitor;
     }
 
-    /**
-     * Deletes all the {@link Intent}s and {@link EntityType}s from the DialogFlow agent.
-     * <p>
-     * Agent cleaning is enabled by setting the property {@link DialogFlowConfiguration#CLEAN_AGENT_ON_STARTUP_KEY}
-     * in the xatkit configuration file, and allows to easily re-deploy bots under development. Production-ready
-     * agents should not be cleaned on startup: re-training the ML engine can take a while.
-     *
-     * @throws IntentRecognitionProviderException if an error occurred when accessing the intent provider
-     */
-    private void cleanAgent() throws IntentRecognitionProviderException {
-        if (this.configuration.isCleanAgentOnStartup()) {
-            Log.info("Cleaning agent DialogFlow agent");
-            List<Intent> intents = getRegisteredIntents();
-            for (Intent intent : intents) {
-                if (!intent.getDisplayName().equals(DEFAULT_FALLBACK_INTENT.getName())) {
-                    this.dialogFlowClients.getIntentsClient().deleteIntent(intent.getName());
-                }
-            }
-            List<EntityType> entityTypes = getRegisteredEntityTypes();
-            for (EntityType entityType : entityTypes) {
-                this.dialogFlowClients.getEntityTypesClient().deleteEntityType(entityType.getName());
-            }
-        }
-    }
+
 
     /**
      * Imports the intents registered in the DialogFlow project.
@@ -247,7 +226,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     }
 
     /**
-     * Returns the partial description of the {@link Intent}s that are registered in the DialogFlow project.
+     * Returns the partial description of the {@link Intent}s that are registered in the NLUServer project.
      * <p>
      * The partial descriptions of the {@link Intent}s does not include the {@code training phrases}.
      *
@@ -274,6 +253,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      */
     public void registerEntityDefinition(@NonNull EntityDefinition entityDefinition)
             throws IntentRecognitionProviderException {
+        /* TODO
         checkNotShutdown();
         if (entityDefinition instanceof BaseEntityDefinition) {
             BaseEntityDefinition baseEntityDefinition = (BaseEntityDefinition) entityDefinition;
@@ -292,7 +272,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
                     /*
                      * Store the EntityType returned by the DialogFlow API: some fields such as the name are
                      * automatically set by the platform.
-                     */
+
                     EntityType createdEntityType =
                             this.dialogFlowClients.getEntityTypesClient().createEntityType(projectAgentName,
                                     entityType);
@@ -310,6 +290,8 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
                             + "unsupported {1}", entityDefinition.getClass().getSimpleName(),
                     EntityDefinition.class.getSimpleName()));
         }
+        */
+
     }
 
     /**
@@ -352,7 +334,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      *
      * @param intentDefinition the {@link IntentDefinition} to register to the DialogFlow project
      * @throws NullPointerException if the provided {@code intentDefinition} is {@code null}
-     * @see DialogFlowIntentMapper
+     * @see NLUServerIntentMapper
      */
     @Override
     public void registerIntentDefinition(@NonNull IntentDefinition intentDefinition)
@@ -378,94 +360,16 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws NullPointerException if the provided {@code entityDefinition} is {@code null}
-     */
     @Override
-    public void deleteEntityDefinition(@NonNull EntityDefinition entityDefinition)
-            throws IntentRecognitionProviderException {
-        checkNotShutdown();
-        if (entityDefinition instanceof BaseEntityDefinition) {
-            BaseEntityDefinition baseEntityDefinition = (BaseEntityDefinition) entityDefinition;
-            Log.trace("Skipping deletion of {0} ({1}), {0} are natively supported by DialogFlow and cannot be "
-                            + "deleted", BaseEntityDefinition.class.getSimpleName(),
-                    baseEntityDefinition.getEntityType().getLiteral());
-        } else if (entityDefinition instanceof CustomEntityDefinition) {
-            CustomEntityDefinition customEntityDefinition = (CustomEntityDefinition) entityDefinition;
-            /*
-             * Reduce the number of calls to the DialogFlow API by first looking for the EntityType in the local cache.
-             */
-            EntityType entityType = this.registeredEntityTypes.get(customEntityDefinition.getName());
-            if (isNull(entityType)) {
-                /*
-                 * The EntityType is not in the local cache, loading it through a DialogFlow query.
-                 */
-                Optional<EntityType> dialogFlowEntityType = getRegisteredEntityTypes().stream().filter(
-                        registeredEntityType -> registeredEntityType.getDisplayName()
-                                .equals(customEntityDefinition.getName())).findAny();
-                if (dialogFlowEntityType.isPresent()) {
-                    entityType = dialogFlowEntityType.get();
-                } else {
-                    Log.warn("Cannot delete the {0} {1}, the entity type does not exist", EntityType.class
-                            .getSimpleName(), entityDefinition.getName());
-                    return;
-                }
-            }
-            try {
-                this.dialogFlowClients.getEntityTypesClient().deleteEntityType(entityType.getName());
-            } catch (InvalidArgumentException e) {
-                throw new IntentRecognitionProviderException(MessageFormat.format("An error occurred while deleting "
-                        + "entity {0}", entityDefinition.getName()), e);
-            }
-            Log.debug("{0} {1} successfully deleted", EntityType.class.getSimpleName(), entityType.getDisplayName());
-            /*
-             * Remove the deleted EntityType from the local cache.
-             */
-            this.registeredEntityTypes.remove(entityType.getDisplayName());
-        } else {
-            throw new IntentRecognitionProviderException(MessageFormat.format("Cannot delete the provided {0}, "
-                            + "unsupported {1}", entityDefinition.getClass().getSimpleName(),
-                    EntityDefinition.class.getSimpleName()));
-        }
+    public void deleteEntityDefinition(@NonNull EntityDefinition entityDefinition) throws IntentRecognitionProviderException {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws NullPointerException if the provided {@code intentDefinition} is {@code null}
-     */
     @Override
-    public void deleteIntentDefinition(@NonNull IntentDefinition intentDefinition)
-            throws IntentRecognitionProviderException {
-        checkNotShutdown();
-        checkNotNull(intentDefinition.getName(), "Cannot delete the IntentDefinition with null as its name");
-        /*
-         * Reduce the number of calls to the DialogFlow API by first looking for the Intent in the local cache.
-         */
-        Intent intent = this.registeredIntents.get(intentDefinition.getName());
-        if (isNull(intent)) {
-            /*
-             * The Intent is not in the local cache, loading it through a DialogFlow query.
-             */
-            Optional<Intent> dialogFlowIntent = getRegisteredIntents().stream().filter(registeredIntent ->
-                    registeredIntent.getDisplayName().equals(intentDefinition.getName())).findAny();
-            if (dialogFlowIntent.isPresent()) {
-                intent = dialogFlowIntent.get();
-            } else {
-                Log.warn("Cannot delete the {0} {1}, the intent does not exist", Intent.class.getSimpleName(),
-                        intentDefinition.getName());
-                return;
-            }
-        }
-        this.dialogFlowClients.getIntentsClient().deleteIntent(intent.getName());
-        Log.debug("{0} {1} successfully deleted", Intent.class.getSimpleName(), intentDefinition.getName());
-        /*
-         * Remove the deleted Intent from the local cache.
-         */
-        this.registeredIntents.remove(intent.getDisplayName());
+    public void deleteIntentDefinition(@NonNull IntentDefinition intentDefinition) throws IntentRecognitionProviderException {
+        throw new UnsupportedOperationException("Not implemented");
     }
+
 
     /**
      * {@inheritDoc}
@@ -510,24 +414,6 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     /**
      * {@inheritDoc}
      * <p>
-     * The created context wraps the internal DialogFlow context that is used on the DialogFlow project to retrieve
-     * conversation parts from a given user.
-     * <p>
-     * The returned {@link StateContext} is configured by the global {@link Configuration} provided in
-     * {@link #DialogFlowIntentRecognitionProvider(EventDefinitionRegistry, Configuration, RecognitionMonitor)}.
-     *
-     * @throws NullPointerException if the provided {@code sessionId} is {@code null}
-     */
-    @Override
-    public StateContext createContext(@NonNull String sessionId) throws IntentRecognitionProviderException {
-        checkNotShutdown();
-        SessionName sessionName = SessionName.of(this.configuration.getProjectId(), sessionId);
-        return new DialogFlowStateContextImpl(sessionName, this.configuration.getBaseConfiguration());
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * This method ensures the the context values stored in the provided {@code context} are set in the DialogFlow
      * agent when detecting the intent. This ensure that the current state is correctly reflected in DialogFlow.
      * <p>
@@ -546,10 +432,8 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
             throws IntentRecognitionProviderException {
         checkNotShutdown();
         checkArgument(!input.isEmpty(), "Cannot retrieve the intent from empty string");
-        checkArgument(context instanceof DialogFlowStateContext, "Cannot handle the message, expected context type to"
-                        + " be %s, found %s", DialogFlowStateContext.class.getSimpleName(),
-                context.getClass().getSimpleName());
-        DialogFlowStateContext dialogFlowStateContext = (DialogFlowStateContext) context;
+
+
 
         TextInput.Builder textInput =
                 TextInput.newBuilder().setText(input).setLanguageCode(this.configuration.getLanguageCode());
@@ -584,7 +468,6 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     @Override
     public void shutdown() throws IntentRecognitionProviderException {
         checkNotShutdown();
-        this.dialogFlowClients.shutdown();
         if (nonNull(this.recognitionMonitor)) {
             this.recognitionMonitor.shutdown();
         }
@@ -623,6 +506,20 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      */
     @Override
     public boolean isShutdown() {
-        return this.dialogFlowClients.isShutdown();
+        return this.nluServerClientWrapper.isShutdown();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public StateContext createContext(@NonNull String sessionId) {
+        /*
+         * FIXME duplicated code from RegExIntentRecognitionProvider
+         */
+        StateContext stateContext = ExecutionFactory.eINSTANCE.createStateContext();
+        stateContext.setContextId(sessionId);
+        stateContext.setConfiguration(ConfigurationConverter.getMap(configuration.getBaseConfiguration()));
+        return stateContext;
     }
 }

@@ -85,6 +85,10 @@ public class NLUServerConfiguration {
      */
     public static final String STEMMER = "xatkit.nluserver.stemmer";
 
+    /**
+     * Whether to use a stemmer
+     */
+    public static final String URL = "xatkit.nluserver.url";
 
 
     /**
@@ -166,6 +170,11 @@ public class NLUServerConfiguration {
      */
      private float confidenceThreshold;
 
+    /**
+     * @see #URL
+     */
+     private String url;
+
 
 
     /**
@@ -180,7 +189,12 @@ public class NLUServerConfiguration {
         this.baseConfiguration = baseConfiguration;
         checkArgument(baseConfiguration.containsKey(BOT_NAME), "The provided %s does not contain a value for "
                 + "the mandatory property %s", Configuration.class.getSimpleName(), BOT_NAME);
+        checkArgument(baseConfiguration.containsKey(URL), "The provided %s does not contain a value for "
+                + "the mandatory property %s", Configuration.class.getSimpleName(), URL);
+
         this.botId = baseConfiguration.getString(BOT_NAME);
+        this.url = baseConfiguration.getString(URL);
+
         if (baseConfiguration.containsKey(LANGUAGE_CODE_KEY)) {
             languageCode = baseConfiguration.getString(LANGUAGE_CODE_KEY);
         } else {
@@ -197,6 +211,7 @@ public class NLUServerConfiguration {
         this.oovToken = baseConfiguration.getString(OOV_TOKEN,"<OOV>");
         this.numEpochs = baseConfiguration.getInt(NUM_EPOCHS, 300);
         this.numWords = baseConfiguration.getInt(NUM_WORDS, 1000);
+
 
 
     }
