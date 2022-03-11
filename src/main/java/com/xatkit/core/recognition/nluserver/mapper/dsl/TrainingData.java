@@ -15,6 +15,9 @@ public class TrainingData {
     private NLUServerConfiguration config;
 
     @NonNull
+    private List<Intent> nluContexts;
+
+    @NonNull
     private List<Intent> intents;
 
     private List<EntityType> entities;

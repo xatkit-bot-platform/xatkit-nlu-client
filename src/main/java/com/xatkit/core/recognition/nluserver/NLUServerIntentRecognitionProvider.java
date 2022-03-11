@@ -5,6 +5,7 @@ import com.xatkit.core.XatkitException;
 import com.xatkit.core.recognition.AbstractIntentRecognitionProvider;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.RecognitionMonitor;
+import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityMapper;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 import com.xatkit.execution.ExecutionFactory;
@@ -82,17 +83,17 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     /**
      * The mapper creating a NLUServer {@link Intent}s from {@link IntentDefinition} instances.
      */
-    private DialogFlowIntentMapper dialogFlowIntentMapper;
+    private NLUServerIntentMapper nluServerIntentMapper;
 
     /**
      * The mapper creating DialogFlow {@link EntityType}s from {@link EntityDefinition} instances.
      */
-    private DialogFlowEntityMapper dialogFlowEntityMapper;
+    private NLUServerEntityMapper nluServerEntityMapper;
 
     /**
-     * The mapper creating DialogFlow {@link Context}s from {@link DialogFlowStateContext} instances.
+     * The mapper creating DialogFlow {@link EntityType}s from {@link EntityDefinition} instances.
      */
-    private DialogFlowContextMapper dialogFlowContextMapper;
+    private NLUServerStateMapper nluServerStateMapper;
 
     /**
      * The mapper creating DialogFlow entity references from {@link EntityDefinition} references.

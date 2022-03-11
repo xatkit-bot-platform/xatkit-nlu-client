@@ -1,9 +1,12 @@
 package com.xatkit.core.recognition.nluserver.mapper.dsl;
 
 
+import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Data
 public class CustomEntityTypeEntry {
 
     private String value;

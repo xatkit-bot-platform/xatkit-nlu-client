@@ -1,9 +1,12 @@
 package com.xatkit.core.recognition.nluserver.mapper.dsl;
 
 
+import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Data
 /**
  * Custom Entity that can be used in the {@link EntityParameter}s Ii is a specialized
  * {@link EntityType} representing an enumeration of values with possible synonyms

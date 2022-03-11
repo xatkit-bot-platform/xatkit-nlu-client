@@ -1,11 +1,15 @@
 package com.xatkit.core.recognition.nluserver.mapper.dsl;
 
+import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Representation of a Intent part of a {@link NLUContext}.
  */
+
+@Data
 public class Intent {
 
     private final String name;
@@ -25,38 +29,6 @@ public class Intent {
         this.name = name;
         this.trainingSentences = new ArrayList<>();
         this.parameters = new ArrayList<>();
-    }
-
-    /**
-     * @return the trainingSentences
-     */
-    public List<String> getTrainingSentences() {
-        return this.trainingSentences;
-    }
-
-    /**
-     * @param trainingSentences the trainingSentences to set
-     */
-    public void addAllTrainingSentences(List<String> trainingSentences) {
-        this.trainingSentences = trainingSentences;
-    }
-
-    /**
-     * @return the name
-     */
-    public String getName() {
-        return this.name;
-    }
-
-    /**
-     * @return the parameters
-     */
-    public List<EntityParameter> getParameters() {
-        return this.parameters;
-    }
-
-    public void addParameter(EntityParameter p) {
-        this.parameters.add(p);
     }
 
     /**

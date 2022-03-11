@@ -5,13 +5,10 @@ import java.util.List;
 public class Prediction {
     private List<Classification> classifications;
 
-    public Classification getTopClassification()
-    {
+    public Classification getTopClassification() {
         Classification current = classifications.get(0);
-        for (Classification c: classifications)
-        {
-            if (c.getScore() > current.getScore())
-            {
+        for (Classification c: classifications) {
+            if (c.getScore() > current.getScore()) {
                 current = c;
             }
         }
@@ -20,4 +17,3 @@ public class Prediction {
 
 
 }
-
