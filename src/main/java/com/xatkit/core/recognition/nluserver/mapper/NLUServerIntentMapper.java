@@ -75,7 +75,8 @@ public class NLUServerIntentMapper {
                 IntentDefinition.class.getSimpleName(), intentDefinition.getName());
         Intent nluIntent = new Intent(adaptIntentDefinitionNameToNLUServer(intentDefinition.getName()));
 
-        nluIntent.addAllTrainingSentences(createTrainingPhrases(intentDefinition));
+        nluIntent.setTrainingSentences(createTrainingPhrases(intentDefinition));
+
 
        /* List<String> inContextNames = createInContextNames(intentDefinition);
         builder.addAllInputContextNames(inContextNames);

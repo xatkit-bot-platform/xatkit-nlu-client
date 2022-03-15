@@ -4,19 +4,21 @@ import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 @Data
 public class NLUContext {
 
     private String name;
 
-    private ArrayList<Intent> intents;
+    private Set<Intent> intents;
 
     private ArrayList<String> intentNames;
 
     public NLUContext(String name) {
         this.name = name;
-        intents = new ArrayList<>();
+        intents = new TreeSet<Intent>();
         intentNames = new ArrayList<>();
     }
 
@@ -24,7 +26,7 @@ public class NLUContext {
         if (i!=null) {
             intents.add(i);
         } else {
-            throw new NullPointerException("The intent to add to a context canont be null");
+            throw new NullPointerException("The intent to add to a context cannot be null");
         }
     }
 

@@ -10,4 +10,6 @@ public class Classification {
 
     private Float score;
 
+    private String matchedUtterance;
+
 }

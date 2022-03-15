@@ -15,5 +15,8 @@ public class Prediction {
         return current;
     }
 
+    public boolean isEmpty() {
+        return classifications.isEmpty();
+    }
 
 }
