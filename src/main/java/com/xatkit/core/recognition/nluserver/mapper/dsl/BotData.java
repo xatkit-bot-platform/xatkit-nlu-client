@@ -1,9 +1,11 @@
 package com.xatkit.core.recognition.nluserver.mapper.dsl;
 
 import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
+import kong.unirest.json.JSONArray;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -17,6 +19,9 @@ public class BotData {
 
     @NonNull
     private String botId;
+
+    // Internal UUID assigned by the server, not used by now
+    private String UUID;
 
     @NonNull
     private NLUServerConfiguration config;
@@ -44,5 +49,6 @@ public class BotData {
     public NLUContext getNluContext(String name) {
         return (this.nluContexts.stream().filter(c -> c.getName().equals(name)).findAny().orElse(null));
     }
+
 
 }

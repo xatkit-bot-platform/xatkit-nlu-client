@@ -9,7 +9,7 @@ import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityMapper;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityReferenceMapper;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerIntentMapper;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerStateMapper;
-import com.xatkit.core.recognition.nluserver.mapper.RecognizedIntentMapper;
+import com.xatkit.core.recognition.nluserver.mapper.NLUServerRecognizedIntentMapper;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.BotData;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Classification;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
@@ -21,7 +21,6 @@ import com.xatkit.execution.State;
 import com.xatkit.execution.StateContext;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.CompositeEntityDefinition;
-import com.xatkit.intent.CompositeEntityDefinitionEntry;
 import com.xatkit.intent.CustomEntityDefinition;
 import com.xatkit.intent.EntityDefinition;
 import com.xatkit.intent.IntentDefinition;
@@ -34,11 +33,7 @@ import org.apache.commons.configuration2.ConfigurationConverter;
 
 import javax.annotation.Nullable;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static fr.inria.atlanmod.commons.Preconditions.checkArgument;
 import static fr.inria.atlanmod.commons.Preconditions.checkNotNull;
@@ -105,7 +100,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     /**
      * The mapper creating {@link RecognizedIntent}s from {@link Prediction} instances returned by DialogFlow.
      */
-    private RecognizedIntentMapper recognizedIntentMapper;
+    private NLUServerRecognizedIntentMapper nluServerRecognizedIntentMapper;
 
     /**
      * Constructs a {@link NLUServerIntentRecognitionProvider} with the provided {@code eventRegistry}, {@code
@@ -120,7 +115,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * @param recognitionMonitor the {@link RecognitionMonitor} instance storing intent matching information
      * @throws NullPointerException if the provided {@code eventRegistry}, {@code configuration} or one of the mandatory
      *                              {@code configuration} value is {@code null}.
-     * @throws XatkitException      if an internal error occurred while creating the DialogFlow connector
+     * @throws XatkitException      if an internal error occurred while creating the NLUServer connector
      * @see NLUServerConfiguration
      */
     public NLUServerIntentRecognitionProvider(@NonNull EventDefinitionRegistry eventRegistry,
@@ -139,8 +134,9 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         this.nluServerIntentMapper = new NLUServerIntentMapper(this.configuration,
                 this.nluServerEntityReferenceMapper);
         this.nluServerEntityMapper = new NLUServerEntityMapper(this.nluServerEntityReferenceMapper);
-        this.recognizedIntentMapper = new RecognizedIntentMapper(this.configuration, eventRegistry);
+        this.nluServerRecognizedIntentMapper = new NLUServerRecognizedIntentMapper(this.configuration, eventRegistry);
         this.recognitionMonitor = recognitionMonitor;
+
     }
 
     /**
@@ -189,8 +185,6 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         NLUContext nluContext = nluServerStateMapper.mapStateDefinition(state);
 
     }
-
-
 
 
     /**
@@ -352,44 +346,20 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
                 recognizedIntent.setDefinition(DEFAULT_FALLBACK_INTENT);
                 recognizedIntent.setRecognitionConfidence(topClassification.getScore());
                 recognizedIntent.setMatchedInput(topClassification.getMatchedUtterance());
-            }
-
             } else {
                 List<RecognizedIntent> recognizedIntents =
-                        nlpjsRecognitionResultMapper.mapRecognitionResult(recognitionResult);
+                        nluServerRecognizedIntentMapper.mapRecognitionResult(prediction);
                 recognizedIntent = getBestCandidate(recognizedIntents, context);
-                recognizedIntent.getValues().addAll(nlpjsRecognitionResultMapper.mapParameterValues(
-                        (IntentDefinition) recognizedIntent.getDefinition(), recognitionResult.getEntities()));
+                // TODO ADD potential matched entities to the recognized intent recognizedIntent.getValues().addAll
+                //  (nluServerRecognizedIntentMapper.mapParameterValues(
+                //        (IntentDefinition) recognizedIntent.getDefinition(), recognitionResult.getEntities()));
             }
-
-            TextInput.Builder textInput =
-                    TextInput.newBuilder().setText(input).setLanguageCode(this.configuration.getLanguageCode());
-            QueryInput queryInput = QueryInput.newBuilder().setText(textInput).build();
-
-            Iterable<Context> contexts = dialogFlowContextMapper.createOutContextsForState(dialogFlowStateContext);
-
-            DetectIntentRequest request = DetectIntentRequest.newBuilder().setQueryInput(queryInput)
-                    .setQueryParams(QueryParameters.newBuilder()
-                            .addAllContexts(contexts)
-                            .build())
-                    .setSession(dialogFlowStateContext.getSessionName().toString())
-                    .build();
-
-            DetectIntentResponse response;
-            try {
-                response = this.dialogFlowClients.getSessionsClient().detectIntent(request);
-            } catch (Exception e) {
-                throw new IntentRecognitionProviderException(e);
-            }
-            QueryResult queryResult = response.getQueryResult();
-            RecognizedIntent recognizedIntent = recognizedIntentMapper.mapQueryResult(queryResult);
-
 
             if (nonNull(recognitionMonitor)) {
                 recognitionMonitor.logRecognizedIntent(context, recognizedIntent);
             }
             return recognizedIntent;
-        } catch (NlpjsClientException e) {
+        } catch (Exception e) {
             throw new IntentRecognitionProviderException(e);
         }
     }

@@ -14,10 +14,10 @@ import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 import lombok.NonNull;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.xatkit.core.recognition.IntentRecognitionProvider.DEFAULT_FALLBACK_INTENT;
 import static fr.inria.atlanmod.commons.Preconditions.checkArgument;
@@ -30,7 +30,7 @@ import static java.util.Objects.nonNull;
  * This class allows to wrap {@link Prediction} instances into generic {@link RecognizedIntent} that can be
  * manipulated by the core components.
  */
-public class RecognizedIntentMapper {
+public class NLUServerRecognizedIntentMapper {
 
     /**
      * The {@link NLUServerConfiguration}.
@@ -47,107 +47,50 @@ public class RecognizedIntentMapper {
     private EventDefinitionRegistry eventRegistry;
 
     /**
-     * Constructs a {@link RecognizedIntentMapper} with the provided {@code configuration} and {@code eventRegistry}.
+     * Constructs a {@link NLUServerRecognizedIntentMapper} with the provided {@code configuration} and {@code eventRegistry}.
      *
      * @param configuration the {@link NLUServerConfiguration}
      * @param eventRegistry the {@link EventDefinitionRegistry} used to retrieve the {@link RecognizedIntent}'s
      *                      definitions
      * @throws NullPointerException if the provided {@code configuration} or {@code eventRegistry} is {@code null}
      */
-    public RecognizedIntentMapper(@NonNull NLUServerConfiguration configuration,
-                                  @NonNull EventDefinitionRegistry eventRegistry) {
+    public NLUServerRecognizedIntentMapper(@NonNull NLUServerConfiguration configuration,
+                                           @NonNull EventDefinitionRegistry eventRegistry) {
         this.configuration = configuration;
         this.eventRegistry = eventRegistry;
     }
 
+
+
     /**
-     * Reifies the provided NLUServer {@link Prediction} into a {@link RecognizedIntent}.
+     * Transforms the NLUServer {@code prediction} to {@link RecognizedIntent}s.
      * <p>
-     * This method relies on the {@link #convertNLUServerIntentToIntentDefinition(Intent)} method to retrieve the
-     * {@link IntentDefinition} associated to the {@link Prediction}'s {@link Intent}, and the
-     * {@link IntentDefinition#getParameter(String)} method to retrieve the {@link ContextParameter}s to set the
-     * value of from the DialogFlow contexts.
+     * Xatkit's NLUServer returns a classification of the agent's intents for a given input. This method transform
+     * each
+     * classification entry to a {@link RecognizedIntent}, but does not select which one to keep and use in the bot's
+     * state machine.
      *
-     * @param result the NLUServer {@link Prediction} containing the {@link Intent} to reify
-     * @return the reified {@link RecognizedIntent}
-     * @throws NullPointerException     if the provided {@link Prediction} is {@code null}
-     * @throws IllegalArgumentException if the provided {@link Prediction}'s {@link Intent} is {@code null}
-     * @see #convertNLUServerIntentToIntentDefinition(Intent)
-     * @see IntentDefinition#getParameter(String)
+     * @param prediction the NLUServer recognition result
+     * @return the {@link RecognizedIntent}s corresponding to the provided {@code recognitionResult}
+     * @throws NullPointerException if the provided {@code recognitionResult} is {@code null}
      */
-    public RecognizedIntent mapTopQueryResult(@NonNull Prediction result) {
-        checkArgument(nonNull(result.getTopClassification()), "Cannot create a %s from the provided %s'%s %s", RecognizedIntent
-                .class.getSimpleName(), Prediction.class.getSimpleName(), Intent.class.getSimpleName(), result
-                .getTopClassification());
-        Classification topClassification = result.getTopClassification();
-        RecognizedIntent recognizedIntent = IntentFactory.eINSTANCE.createRecognizedIntent();
-        /*
-         * Retrieve the IntentDefinition corresponding to this Intent.
-         */
-        IntentDefinition intentDefinition = convertNLUServerIntentToIntentDefinition(topClassification.getIntent());
-        recognizedIntent.setDefinition(intentDefinition);
-
-        /*
-         * Reuse the QueryResult values to set the recognition confidence and the matched input
-         */
-        recognizedIntent.setRecognitionConfidence(topClassification.getScore());
-        // recognizedIntent.setMatchedInput(result.getQueryText()); We don't really have this data in the NLUServer
-
-        /*
-         * Handle the confidence threshold: if the matched intent's confidence is lower than the defined threshold we
-         *  set its definition to DEFAULT_FALLBACK_INTENT and we skip context registration.
-         */
-        if (!recognizedIntent.getDefinition().equals(DEFAULT_FALLBACK_INTENT)
-                && recognizedIntent.getRecognitionConfidence() < this.configuration.getConfidenceThreshold()) {
-            boolean containsAnyEntity =
-                    recognizedIntent.getDefinition().getParameters().stream().anyMatch(
-                            p -> p.getEntity().getReferredEntity() instanceof BaseEntityDefinition
-                                    && ((BaseEntityDefinition) p.getEntity().getReferredEntity()).getEntityType()
-                                    .equals(com.xatkit.intent.EntityType.ANY)
-                    );
-            /*
-             * We should not reject a recognized intent if it contains an any entity, these intents typically have a
-             * low confidence level.
-             */
-            if (!containsAnyEntity) {
-                Log.debug("Confidence for matched intent {0} (input = \"{1}\", confidence = {2}) is lower than the "
-                                + "configured threshold ({3}), overriding the matched intent with {4}",
-                        recognizedIntent.getDefinition().getName(), recognizedIntent.getMatchedInput(),
-                        recognizedIntent.getRecognitionConfidence(), this.configuration.getConfidenceThreshold(),
-                        DEFAULT_FALLBACK_INTENT.getName());
-                recognizedIntent.setDefinition(DEFAULT_FALLBACK_INTENT);
-                return recognizedIntent;
-            } else {
-                Log.debug("Detected a low-confidence value for the intent {0} (inputs = \"{1}\", confidence = {2}). "
-                        + "The intent has not been filtered out because it contains an any entity");
-            }
+    public List<RecognizedIntent> mapRecognitionResult(@NonNull Prediction prediction) {
+        List<Classification> classifications = prediction.getClassifications();
+        classifications =
+                classifications.stream().filter(c -> c.getScore() > configuration.getConfidenceThreshold()).collect(Collectors.toList());
+        List<RecognizedIntent> recognizedIntents = new ArrayList<>();
+        for (Classification classification : classifications) {
+            RecognizedIntent recognizedIntent = IntentFactory.eINSTANCE.createRecognizedIntent();
+            IntentDefinition intentDefinition = convertNLUServerIntentToIntentDefinition(classification.getIntent());
+            recognizedIntent.setDefinition(intentDefinition);
+            recognizedIntent.setRecognitionConfidence(classification.getScore());
+            recognizedIntent.setMatchedInput(classification.getMatchedUtterance());
+            recognizedIntents.add(recognizedIntent);
         }
-        /*
-         * Set the output context values.
-         */
-
-        /** TODO
-        for (Context context : result.getOutputContextsList()) {
-            String contextName = ContextName.parse(context.getName()).getContext();
-            Log.debug("Processing context {0}", context.getName());
-            Map<String, Value> parameterValues = context.getParameters().getFieldsMap();
-            for (String key : parameterValues.keySet()) {
-                Value value = parameterValues.get(key);
-
-                Object parameterValue = buildParameterValue(value);
-
-                ContextParameter contextParameter = intentDefinition.getParameter(key);
-                if (nonNull(contextParameter) && !key.contains(".original")) {
-                    ContextParameterValue contextParameterValue =
-                            IntentFactory.eINSTANCE.createContextParameterValue();
-                    contextParameterValue.setContextParameter(contextParameter);
-                    contextParameterValue.setValue(parameterValue);
-                    recognizedIntent.getValues().add(contextParameterValue);
-                }
-            }
-        }*/
-        return recognizedIntent;
+        return recognizedIntents;
     }
+
+
 
     /**
      * Reifies the provided NLUServer {@code intent} into an Xatkit {@link IntentDefinition}.

@@ -212,8 +212,6 @@ public class NLUServerConfiguration {
         this.numEpochs = baseConfiguration.getInt(NUM_EPOCHS, 300);
         this.numWords = baseConfiguration.getInt(NUM_WORDS, 1000);
 
-
-
     }
 
 }
