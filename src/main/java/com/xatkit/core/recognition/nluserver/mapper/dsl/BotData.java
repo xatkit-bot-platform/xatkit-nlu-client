@@ -10,15 +10,14 @@ import org.json.JSONObject;
 import java.util.List;
 
 @Data
-@Builder
 public class BotData {
 
-    public BotData(String botId) {
-        this.botId = botId;
+    public BotData(String botName) {
+        this.botName = botName;
     }
 
     @NonNull
-    private String botId;
+    private String botName;
 
     // Internal UUID assigned by the server, not used by now
     private String UUID;

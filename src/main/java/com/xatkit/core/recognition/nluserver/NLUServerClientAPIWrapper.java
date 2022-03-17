@@ -14,7 +14,7 @@ import kong.unirest.json.JSONArray;
 import lombok.NonNull;
 import lombok.Value;
 import org.json.JSONObject;
-
+import static java.util.Objects.isNull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,9 +28,6 @@ public class NLUServerClientAPIWrapper {
 
     /**
      * The client instance managing the interaction with the deployed NLU server.
-     * <p>
-     * This client is used to execute project-level operations, such as the training of the underlying DialogFlow's
-     * agent.
      */
 
     private NLUServerConfiguration configuration;
@@ -46,31 +43,35 @@ public class NLUServerClientAPIWrapper {
      */
     public NLUServerClientAPIWrapper(@NonNull NLUServerConfiguration configuration, BotData bot) throws IntentRecognitionProviderException {
 
-        this.bot = bot;
-        this.configuration = configuration;
-        Unirest.config().defaultBaseUrl(configuration.getUrl());
+        if (isNull(bot) || isNull(configuration)) {
+            throw new IntentRecognitionProviderException("An error occurred when initializing the NLUServer client: "
+                    + "bot and configuration cannot be null");
+        } else {
+            this.bot = bot;
+            this.configuration = configuration;
+            Unirest.config().defaultBaseUrl(configuration.getUrl());
+        }
     }
 
     /**
-     * Deploy the bot on the NLUServer available in the configuration URL
-     * @throws RuntimeException if the provided {@code configuration} does not
-     *                                            contain a valid url
+     * Deploy the bot on the NLUServer available in the configuration URL.
+     * @return true if the bot was successfully deployed
      */
     private boolean deployBot() {
         boolean isDeployed = false;
         Map<String, Object> fields = new HashMap<>();
-        fields.put("name", bot.getBotId());
+        fields.put("name", bot.getBotName());
         fields.put("force_overwrite", configuration.isForceOverwrite());
         HttpResponse<JsonNode> response = Unirest.post("/bot/new/")
                 .fields(fields)
                 .asJson();
         if (response.isSuccess()) {
             this.bot.setUUID(response.getBody().getObject().get("uuid").toString());
-            HttpResponse<JsonNode> response_initialization = Unirest.post("/bot/{botname}/initialize/")
-                    .routeParam("botname",bot.getBotId())
+            HttpResponse<JsonNode> responseInitialization = Unirest.post("/bot/{botname}/initialize/")
+                    .routeParam("botname", bot.getBotName())
                     .body(botToJSONBot())
                     .asJson();
-            if (response_initialization.isSuccess()) {
+            if (responseInitialization.isSuccess()) {
                 isDeployed = true;
             }
         }
@@ -79,8 +80,6 @@ public class NLUServerClientAPIWrapper {
 
     /**
      * Trains the bot on the NLUServer available in the configuration URL
-     * @throws RuntimeException if the provided {@code configuration} does not
-     * contain a valid url or there is not bot ready to be trained with the right id
      */
     private boolean trainBot() {
 
@@ -96,7 +95,7 @@ public class NLUServerClientAPIWrapper {
         configurationFields.put("stemmer", configuration.isStemmer());
 
         HttpResponse<JsonNode> response = Unirest.post("/bot/{botname}/train/")
-                .routeParam("botname",bot.getBotId())
+                .routeParam("botname", bot.getBotName())
                 .fields(configurationFields)
                 .asJson();
         if (response.isSuccess()) {
@@ -108,9 +107,10 @@ public class NLUServerClientAPIWrapper {
     }
 
     public boolean deployAndTrainBot() {
-        boolean isDeployed, isTrained = false;
+        boolean isDeployed = false;
+        boolean isTrained = false;
         isDeployed = deployBot();
-        if(isDeployed) {
+        if (isDeployed) {
             isTrained = trainBot();
         }
         return isDeployed && isTrained;
@@ -135,20 +135,20 @@ public class NLUServerClientAPIWrapper {
         fields.put("context", nluContext.getName());
 
         HttpResponse<JsonNode> response = Unirest.post("/bot/{botname}/predict/")
-                .routeParam("botname",bot.getBotId())
+                .routeParam("botname", bot.getBotName())
                 .fields(fields)
                 .asJson();
 
         kong.unirest.json.JSONObject predictionResult = response.getBody().getObject();
-        JSONArray matched_utterances = predictionResult.getJSONArray("matched_utterances");
-        JSONArray prediction_values = predictionResult.getJSONArray("prediction_values");
+        JSONArray matchedUtterances = predictionResult.getJSONArray("matched_utterances");
+        JSONArray predictionValues = predictionResult.getJSONArray("prediction_values");
         JSONArray intents = predictionResult.getJSONArray("intents");
 
-        for (int i=0; i< matched_utterances.length();i++) {
+        for (int i = 0; i <  matchedUtterances.length(); i++) {
             Classification c = new Classification();
             c.setIntent(this.bot.getIntent(intents.getString(i)));
-            c.setScore(prediction_values.getFloat(i));
-            c.setMatchedUtterance((matched_utterances.getString(i)));
+            c.setScore(predictionValues.getFloat(i));
+            c.setMatchedUtterance((matchedUtterances.getString(i)));
             prediction.addClassification(c);
         }
         return prediction;
@@ -156,20 +156,18 @@ public class NLUServerClientAPIWrapper {
 
     private JSONObject botToJSONBot() {
        JSONObject jsonObject = new JSONObject();
-       jsonObject.append("name", bot.getBotId());
+       jsonObject.append("name", bot.getBotName());
 
        JSONArray jsonContexts = new JSONArray();
        jsonObject.append("contexts", jsonContexts);
-       for (NLUContext c: bot.getNluContexts())
-       {
+       for (NLUContext c: bot.getNluContexts()) {
          JSONObject contextJSON = new JSONObject();
          contextJSON.append("name", c.getName());
          JSONArray contextIntentsJSON = new JSONArray();
          contextJSON.append("intents", contextIntentsJSON);
-         for (Intent i: c.getIntents() )
-         {
+         for (Intent i: c.getIntents()) {
              JSONObject intentJSON = new JSONObject();
-             intentJSON.append("name", i.getName() );
+             intentJSON.append("name", i.getName());
              JSONArray intentSentencesJSON = new JSONArray();
              intentSentencesJSON.put(i.getTrainingSentences());
              intentJSON.append("training_sentences", intentSentencesJSON);

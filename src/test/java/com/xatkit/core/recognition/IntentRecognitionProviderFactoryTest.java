@@ -3,7 +3,8 @@ package com.xatkit.core.recognition;
 import com.xatkit.AbstractXatkitTest;
 import com.xatkit.core.EventDefinitionRegistry;
 import com.xatkit.core.XatkitBot;
-import com.xatkit.core.recognition.dialogflow.DialogFlowIntentRecognitionProviderTest;
+import com.xatkit.core.recognition.nluserver.NLUServerIntentRecognitionProvider;
+import com.xatkit.core.recognition.nluserver.NLUServerIntentRecognitionProviderTest;
 import com.xatkit.core.server.XatkitServer;
 import org.apache.commons.configuration2.Configuration;
 import org.junit.After;
@@ -42,29 +43,14 @@ public class IntentRecognitionProviderFactoryTest extends AbstractXatkitTest {
     }
 
     @Test
-    public void getIntentRecognitionProviderDialogFlowProperties() {
-        /*
-         * Use DialogFlowIntentRecognitionProviderTest.buildConfiguration to get a valid configuration (with a valid
-         * path to a credentials file)
-         */
+    public void getIntentRecognitionProviderNLUServerProperties() {
         provider = IntentRecognitionProviderFactory.getIntentRecognitionProvider(xatkitBot,
-                DialogFlowIntentRecognitionProviderTest.buildConfiguration());
+                NLUServerIntentRecognitionProviderTest.buildConfiguration());
         assertThat(provider).as("Not null IntentRecognitionProvider").isNotNull();
-        assertThat(provider).as("IntentRecognitionProvider is a DialogFlowIntentRecognitionProvider").isInstanceOf(DialogFlowIntentRecognitionProvider.class);
-        assertThat(provider.getRecognitionMonitor()).as("Recognition monitor is not null").isNull();
+        assertThat(provider).as("IntentRecognitionProvider is a NLUServerIntentRecognitionProvider").isInstanceOf(NLUServerIntentRecognitionProvider.class);
         assertThat(provider.getPreProcessors()).as("PreProcessor list is empty").isEmpty();
         assertThat(provider.getPostProcessors()).as("PostProcessor list is empty").isEmpty();
     }
 
-    @Test
-    public void getIntentRecognitionProviderDialogFlowPropertiesDisabledAnalytics() {
-        Configuration configuration = DialogFlowIntentRecognitionProviderTest.buildConfiguration();
-        configuration.addProperty(IntentRecognitionProviderFactoryConfiguration.ENABLE_RECOGNITION_ANALYTICS, false);
-        provider = IntentRecognitionProviderFactory.getIntentRecognitionProvider(xatkitBot, configuration);
-        assertThat(provider).as("Not null IntentRecognitionProvider").isNotNull();
-        assertThat(provider).as("IntentRecognitionProvider is a DialogFlowIntentRecognitionProvider").isInstanceOf(DialogFlowIntentRecognitionProvider.class);
-        assertThat(provider.getRecognitionMonitor()).as("Recognition monitor is null").isNull();
-        assertThat(provider.getPreProcessors()).as("PreProcessor list is empty").isEmpty();
-        assertThat(provider.getPostProcessors()).as("PostProcessor list is empty").isEmpty();
-    }
+
 }
