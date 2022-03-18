@@ -4,6 +4,7 @@ import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.BotData;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.NLUContext;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
 import com.xatkit.test.util.VariableLoaderHelper;
 import org.apache.commons.configuration2.BaseConfiguration;
 import org.apache.commons.configuration2.Configuration;
@@ -55,6 +56,7 @@ public class NLUServerClientTest {
 
 
     // TESTS TO RUN WITH A XATKIT NLU SERVER DEPLOYED IN THE URL PROVIDED IN THE TEST-VARIABLES.PROPERTIES FILE
+
     @Test
     @Ignore
     public void deployAndTrainEmptyBot() throws IntentRecognitionProviderException {
@@ -65,10 +67,31 @@ public class NLUServerClientTest {
         assertThat(success).isFalse(); // Empty bots generate an exception when attempting to train them
     }
 
-    // TESTS TO RUN WITH A XATKIT NLU SERVER DEPLOYED IN THE URL PROVIDED IN THE TEST-VARIABLES.PROPERTIES FILE
     @Test
     @Ignore
     public void deployAndTrainSimpleBot() throws IntentRecognitionProviderException {
+        initializeSimpleBotData(botData);
+        nluServerClientWrapper = new NLUServerClientAPIWrapper(validConfiguration, botData);
+        boolean success = false;
+        success = nluServerClientWrapper.deployAndTrainBot();
+        assertThat(success).isTrue();
+    }
+
+    @Test
+    @Ignore
+    public void predictExistingContext() throws IntentRecognitionProviderException {
+        Prediction prediction;
+        initializeSimpleBotData(botData);
+        nluServerClientWrapper = new NLUServerClientAPIWrapper(validConfiguration, botData);
+        boolean success = nluServerClientWrapper.deployAndTrainBot();
+        assertThat(success).isTrue();
+        prediction = nluServerClientWrapper.predict(botData.getNluContext("context1"), "he loves your dog");
+        assertThat(prediction).isNotNull();
+        assertThat(prediction.getClassifications().size()).isEqualTo(2);
+        assertThat(prediction.getTopClassification().getIntent().getName()).isEqualTo("intent1Ccontext1");
+    }
+
+    private void initializeSimpleBotData(BotData bot) {
         NLUContext context1 = new NLUContext("context1");
         NLUContext context2 = new NLUContext("context2");
         Intent i1 = new Intent("intent1Ccontext1");
@@ -82,12 +105,9 @@ public class NLUServerClientTest {
         context2.addIntent(i3);
         botData.addNLUContext(context1);
         botData.addNLUContext(context2);
-        nluServerClientWrapper = new NLUServerClientAPIWrapper(validConfiguration, botData);
-        boolean success = false;
-        success = nluServerClientWrapper.deployAndTrainBot();
-        assertThat(success).isTrue();
+        botData.addIntent(i1);
+        botData.addIntent(i2);
+        botData.addIntent(i3);
     }
-
-
 
 }

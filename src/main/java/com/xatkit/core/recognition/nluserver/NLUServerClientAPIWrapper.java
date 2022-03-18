@@ -161,7 +161,7 @@ public class NLUServerClientAPIWrapper {
     }
 
     public Prediction predict(NLUContext nluContext, String input) {
-        Prediction prediction = new Prediction();
+        Prediction prediction = null;
 
         Map<String, Object> fields = new HashMap<>();
         fields.put("utterance", input);
@@ -174,17 +174,23 @@ public class NLUServerClientAPIWrapper {
                 .body(fields)
                 .asJson();
 
-        kong.unirest.json.JSONObject predictionResult = response.getBody().getObject();
-        JSONArray matchedUtterances = predictionResult.getJSONArray("matched_utterances");
-        JSONArray predictionValues = predictionResult.getJSONArray("prediction_values");
-        JSONArray intents = predictionResult.getJSONArray("intents");
+        if (response.isSuccess()) {
+            kong.unirest.json.JSONObject predictionResult = response.getBody().getObject();
+            JSONArray matchedUtterances = predictionResult.getJSONArray("matched_utterances");
+            JSONArray predictionValues = predictionResult.getJSONArray("prediction_values");
+            JSONArray intents = predictionResult.getJSONArray("intents");
 
-        for (int i = 0; i <  matchedUtterances.length(); i++) {
-            Classification c = new Classification();
-            c.setIntent(this.bot.getIntent(intents.getString(i)));
-            c.setScore(predictionValues.getFloat(i));
-            c.setMatchedUtterance((matchedUtterances.getString(i)));
-            prediction.addClassification(c);
+            prediction = new Prediction();
+
+            for (int i = 0; i <  predictionValues.length(); i++) {
+                Classification c = new Classification();
+                c.setIntent(this.bot.getIntent(intents.getString(i)));
+                c.setScore(predictionValues.getFloat(i));
+                c.setMatchedUtterance((matchedUtterances.getString(i)));
+                prediction.addClassification(c);
+            }
+        } else {
+            Log.warn("Error during bot prediction {0}", response.getStatusText() + response.getBody().toString());
         }
         return prediction;
     }
