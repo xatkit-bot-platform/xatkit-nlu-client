@@ -60,12 +60,12 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     private NLUServerClientAPIWrapper nluServerClientWrapper;
 
     /**
-     * Represents the bot project id.
+     * Represents the bot project name.
      * <p>
      * This attribute is used to compute bot-level operations
      * @see #trainMLEngine()
      */
-    private String botId;
+    private String botName;
 
     private BotData bot;
 
@@ -123,7 +123,8 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
                                               @Nullable RecognitionMonitor recognitionMonitor) {
         Log.info("Starting Xatkit's NLU Server connector");
         this.configuration = new NLUServerConfiguration(configuration);
-        this.bot = new BotData(this.botId);
+        this.botName = this.configuration.getBotName();
+        this.bot = new BotData(this.botName);
         try {
             this.nluServerClientWrapper = new NLUServerClientAPIWrapper(this.configuration, this.bot);
         } catch (IntentRecognitionProviderException e) {
@@ -160,6 +161,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         }
         Log.debug("Registering NLUServer intent {0}", intentDefinition.getName());
         Intent intent = nluServerIntentMapper.mapIntentDefinition(intentDefinition);
+        this.bot.addIntent(intent);
 
     }
 
@@ -183,6 +185,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         }
         Log.debug("Registering NLUServer state {0}", state.getName());
         NLUContext nluContext = nluServerStateMapper.mapStateDefinition(state);
+        this.bot.addNLUContext(nluContext);
 
     }
 
@@ -279,7 +282,6 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         throw new UnsupportedOperationException("Not implemented");
     }
 
-
     /**
      * {@inheritDoc}
      * <p>
@@ -373,6 +375,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
         if (nonNull(this.recognitionMonitor)) {
             this.recognitionMonitor.shutdown();
         }
+        this.nluServerClientWrapper.shutdown();
     }
 
     /**

@@ -5,6 +5,7 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 @Data
@@ -12,13 +13,13 @@ public class NLUContext {
 
     private String name;
 
-    private Set<Intent> intents;
+    private ArrayList<Intent> intents;
 
     private ArrayList<String> intentNames;
 
     public NLUContext(String name) {
         this.name = name;
-        intents = new TreeSet<Intent>();
+        intents = new ArrayList<>();
         intentNames = new ArrayList<>();
     }
 
@@ -31,7 +32,7 @@ public class NLUContext {
     }
 
     public void addIntentNames(List<String> intentNames) {
-        intentNames.addAll(intentNames);
+        this.intentNames.addAll(intentNames);
     }
 
 }

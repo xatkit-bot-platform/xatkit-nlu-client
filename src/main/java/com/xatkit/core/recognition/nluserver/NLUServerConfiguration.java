@@ -219,7 +219,7 @@ public class NLUServerConfiguration {
         if (baseConfiguration.containsKey(LANGUAGE_REGION_CODE_KEY)) {
             languageRegionCode = baseConfiguration.getString(LANGUAGE_REGION_CODE_KEY);
         } else {
-            Log.warn("No language code provided, using the default one ({0})", DEFAULT_LANGUAGE_REGION_CODE);
+            Log.warn("No language region code provided, using the default one ({0})", DEFAULT_LANGUAGE_REGION_CODE);
             languageRegionCode = DEFAULT_LANGUAGE_REGION_CODE;
         }
 

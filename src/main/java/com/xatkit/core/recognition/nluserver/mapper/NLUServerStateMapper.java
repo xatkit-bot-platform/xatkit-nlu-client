@@ -59,7 +59,7 @@ public class NLUServerStateMapper {
                 State.class.getSimpleName(), state.getName());
         NLUContext nluContext = new NLUContext(adaptStateDefinitionNameToNLUServer(state.getName()));
 
-        nluContext.addIntentNames(getLinkedIntentNames(nluContext, state.getAllAccessedIntents()));
+        nluContext.addIntentNames(getLinkedIntentNames(state.getAllAccessedIntents()));
         return nluContext;
     }
 
@@ -82,8 +82,7 @@ public class NLUServerStateMapper {
      * @see NLUServerIntentMapper
      * @param linkedIntents the {@link IntentDefinition} accessible from the {@link State}
      */
-    private List<String> getLinkedIntentNames(NLUContext nluContext,
-                                              @NonNull Collection<IntentDefinition> linkedIntents) {
+    private List<String> getLinkedIntentNames(@NonNull Collection<IntentDefinition> linkedIntents) {
        return (linkedIntents.stream().map(EventDefinition::getName).collect(Collectors.toList()));
     }
 

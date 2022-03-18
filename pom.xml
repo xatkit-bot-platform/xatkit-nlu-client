@@ -46,14 +46,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Unirest as a snazzy new standalone jar with shaded dependencies -->
-        <dependency>
-            <groupId>com.konghq</groupId>
-            <artifactId>unirest-java</artifactId>
-            <version>3.13.6</version>
-            <classifier>standalone</classifier>
-        </dependency>
-
         <!-- Tests -->
 
         <dependency>
@@ -84,6 +76,17 @@
             <version>4.0.1-SNAPSHOT</version>
         </dependency>
 
+        <!-- Unirest as a snazzy new standalone jar with shaded dependencies -->
+        <dependency>
+            <groupId>com.konghq</groupId>
+            <artifactId>unirest-java</artifactId>
+            <version>3.13.6</version>
+            <classifier>standalone</classifier>
+        </dependency>
+
+
+
+
     </dependencies>
 
     <dependencyManagement>
@@ -92,20 +95,14 @@
 
            <!-- Utils -->
 
-            <!-- Unirest as a snazzy new standalone jar with shaded dependencies -->
-            <dependency>
-                <groupId>com.konghq</groupId>
-                <artifactId>unirest-java</artifactId>
-                <version>3.13.6</version>
-                <classifier>standalone</classifier>
-            </dependency>
-
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
             </dependency>
+
+
 
         </dependencies>
 

@@ -3,7 +3,6 @@ package com.xatkit.core.recognition.nluserver.mapper;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
-import com.xatkit.intent.ContextParameter;
 import com.xatkit.intent.IntentDefinition;
 import com.xatkit.test.bot.IntentProviderTestBot;
 import org.apache.commons.configuration2.BaseConfiguration;
@@ -101,6 +100,7 @@ public class NLUServerIntentMapperTest {
     private NLUServerConfiguration getValidConfiguration() {
         Configuration configuration = new BaseConfiguration();
         configuration.addProperty(NLUServerConfiguration.BOT_NAME, "BOTPROJECT");
+        configuration.addProperty(NLUServerConfiguration.URL, "BOTURL");
         return new NLUServerConfiguration(configuration);
     }
 }
