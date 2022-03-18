@@ -61,8 +61,8 @@ public class NLUServerClientTest {
         nluServerClientWrapper = new NLUServerClientAPIWrapper(validConfiguration, botData);
         boolean success = false;
         success = nluServerClientWrapper.deployAndTrainBot();
-        assertThat(success).isTrue();
-        assertThat(botData.getUUID()).isNotNull();
+        assertThat(botData.getUUID()).isNotNull(); // to chech the bot was deployed
+        assertThat(success).isFalse(); // Empty bots generate an exception when attempting to train them
     }
 
     // TESTS TO RUN WITH A XATKIT NLU SERVER DEPLOYED IN THE URL PROVIDED IN THE TEST-VARIABLES.PROPERTIES FILE
@@ -86,7 +86,6 @@ public class NLUServerClientTest {
         boolean success = false;
         success = nluServerClientWrapper.deployAndTrainBot();
         assertThat(success).isTrue();
-        assertThat(botData.getUUID()).isNotNull();
     }
 
 

@@ -1,8 +1,5 @@
 package com.xatkit.core.recognition.nluserver;
 
-import com.google.gson.JsonArray;
-
-import com.mashape.unirest.http.exceptions.UnirestException;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.BotData;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Classification;
@@ -22,7 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
+
 
 /**
  * Contains the HTTP calls to access the NLUServer server.
@@ -36,13 +33,11 @@ public class NLUServerClientAPIWrapper {
      * The client instance managing the interaction with the deployed NLU server.
      */
 
-    private NLUServerConfiguration configuration;
+    private final NLUServerConfiguration configuration;
 
     private BotData bot;
 
     private boolean iamshutdown;
-
-    private String baseURL;
 
     /**
      * Initializes the NLUServer client using the provided {@code configuration}.
@@ -62,10 +57,8 @@ public class NLUServerClientAPIWrapper {
 
         }
         iamshutdown = false;
-        baseURL = configuration.getUrl();
         Unirest.config().defaultBaseUrl(configuration.getUrl());
     }
-
 
 
     /**
@@ -105,11 +98,15 @@ public class NLUServerClientAPIWrapper {
                 if (responseInitialization.getStatus() == 200) {
                     isDeployed = true;
                 }
+                else {
+                    Log.warn("Error during bot initialization: {0}", responseInitialization.getStatusText());
+                }
             }catch(Exception e){
                 System.out.println(e.toString());
             }
+        } else {
+            Log.warn("Error during bot creation: {0}", response.getStatusText());
         }
-
         return isDeployed;
     }
 
@@ -117,9 +114,7 @@ public class NLUServerClientAPIWrapper {
      * Trains the bot on the NLUServer available in the configuration URL
      */
     private boolean trainBot() {
-
         boolean isTrained = false;
-        /*
         Map<String, Object> configurationFields = new HashMap<>();
         configurationFields.put("country", configuration.getLanguageCode());
         configurationFields.put("num_words", configuration.getNumWords());
@@ -131,17 +126,17 @@ public class NLUServerClientAPIWrapper {
         configurationFields.put("stemmer", configuration.isStemmer());
 
         HttpResponse<JsonNode> response = Unirest.post("/bot/{botname}/train/")
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
                 .routeParam("botname", bot.getBotName())
-                .fields(configurationFields)
+                .body(configurationFields)
                 .asJson();
         if (response.isSuccess()) {
             isTrained = true;
         } else {
-            Log.warn("Error during bot training {0}", response.getStatusText());
-        }*/
+            Log.warn("Error during bot training {0}", response.getStatusText() + response.getBody().toString());
+        }
         return isTrained;
-
-
     }
 
     public boolean deployAndTrainBot() {
@@ -167,14 +162,16 @@ public class NLUServerClientAPIWrapper {
 
     public Prediction predict(NLUContext nluContext, String input) {
         Prediction prediction = new Prediction();
-        /*
+
         Map<String, Object> fields = new HashMap<>();
         fields.put("utterance", input);
         fields.put("context", nluContext.getName());
 
         HttpResponse<JsonNode> response = Unirest.post("/bot/{botname}/predict/")
                 .routeParam("botname", bot.getBotName())
-                .fields(fields)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .body(fields)
                 .asJson();
 
         kong.unirest.json.JSONObject predictionResult = response.getBody().getObject();
@@ -188,24 +185,25 @@ public class NLUServerClientAPIWrapper {
             c.setScore(predictionValues.getFloat(i));
             c.setMatchedUtterance((matchedUtterances.getString(i)));
             prediction.addClassification(c);
-        } */
+        }
         return prediction;
     }
 
-    private class NLUContextDTO{
+    private class NLUContextDTO
+    {
         String name;
         ArrayList<IntentDTO> intents = new ArrayList<>();
 
     }
 
-    private class IntentDTO{
+    private class IntentDTO
+    {
         String name;
         List<String> training_sentences = new ArrayList<>();
     }
 
 
-    private ArrayList<NLUContextDTO> botToContextList()
-    {
+    private ArrayList<NLUContextDTO> botToContextList() {
         ArrayList<NLUContextDTO> nluContextDTOs = new ArrayList<>();
 
         for (NLUContext c: bot.getNluContexts()) {
@@ -224,28 +222,5 @@ public class NLUServerClientAPIWrapper {
         return nluContextDTOs;
     }
 
-    private JSONObject botToJSONBot() {
 
-       JSONObject jsonObject = new JSONObject();
-       jsonObject.put("name", bot.getBotName());
-
-       JSONArray jsonContexts = new JSONArray();
-       jsonObject.put("contexts", jsonContexts);
-       for (NLUContext c: bot.getNluContexts()) {
-         JSONObject contextJSON = new JSONObject();
-         contextJSON.put("name", c.getName());
-         JSONArray contextIntentsJSON = new JSONArray();
-         contextJSON.append("intents", contextIntentsJSON);
-         for (Intent i: c.getIntents()) {
-             JSONObject intentJSON = new JSONObject();
-             intentJSON.put("name", i.getName());
-             JSONArray intentSentencesJSON = new JSONArray();
-             intentSentencesJSON.put(i.getTrainingSentences());
-             intentJSON.append("training_sentences", intentSentencesJSON);
-             contextIntentsJSON.put(intentJSON);
-         }
-         jsonContexts.put(contextJSON);
-       }
-       return jsonObject;
-    }
 }
