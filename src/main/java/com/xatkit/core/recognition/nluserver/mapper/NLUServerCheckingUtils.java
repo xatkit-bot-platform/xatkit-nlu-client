@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * An utility class that provides checking methods for DialogFlow models.
+ * An utility class that provides checking methods for NLUServer models.
  */
 public final class NLUServerCheckingUtils {
 
@@ -49,8 +49,8 @@ public final class NLUServerCheckingUtils {
      * {@link MappingEntityDefinition}.
      * <p>
      * Using placeholders to represent {@link MappingEntityDefinition} is allowed by the framework, but it may
-     * generate consistency issues at the recognition level (e.g. the DialogFlowIntentRecognitionProvider can match
-     * sentences containing the placeholder value). This is not a critical issue and a warning message is logged.
+     * generate consistency issues at the recognition level. This is not a critical issue and a warning message is
+     * logged.
      *
      * @param parameter the {@link ContextParameter} to check
      */

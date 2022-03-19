@@ -55,7 +55,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     private final NLUServerConfiguration configuration;
 
     /**
-     * The clients used to access the DialogFlow API.
+     * The clients used to access the NLUServer API.
      */
     private NLUServerClientAPIWrapper nluServerClientWrapper;
 
@@ -65,7 +65,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * This attribute is used to compute bot-level operations
      * @see #trainMLEngine()
      */
-    private String botName;
+    private final String botName;
 
     private BotData bot;
 
@@ -73,7 +73,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * The {@link RecognitionMonitor} used to track intent matching information.
      */
     @Nullable
-    private RecognitionMonitor recognitionMonitor;
+    private final RecognitionMonitor recognitionMonitor;
 
     /**
      * The mapper creating a NLUServer {@link Intent}s from {@link IntentDefinition} instances.
@@ -81,24 +81,24 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     private NLUServerIntentMapper nluServerIntentMapper;
 
     /**
-     * The mapper creating DialogFlow {@link EntityType}s from {@link EntityDefinition} instances.
+     * The mapper creating NLUServer {@link EntityType}s from {@link EntityDefinition} instances.
      */
     private NLUServerEntityMapper nluServerEntityMapper;
 
     /**
-     * The mapper creating DialogFlow {@link EntityType}s from {@link EntityDefinition} instances.
+     * The mapper creating NLUServer {@link EntityType}s from {@link EntityDefinition} instances.
      */
     private NLUServerStateMapper nluServerStateMapper;
 
     /**
-     * The mapper creating DialogFlow entity references from {@link EntityDefinition} references.
+     * The mapper creating NLUServer entity references from {@link EntityDefinition} references.
      * <p>
      * These references are typically used to refer to {@link EntityType}s in {@link Intent}'s training sentences.
      */
     private NLUServerEntityReferenceMapper nluServerEntityReferenceMapper;
 
     /**
-     * The mapper creating {@link RecognizedIntent}s from {@link Prediction} instances returned by DialogFlow.
+     * The mapper creating {@link RecognizedIntent}s from {@link Prediction} instances returned by the NLUServer.
      */
     private NLUServerRecognizedIntentMapper nluServerRecognizedIntentMapper;
 
@@ -111,7 +111,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * {@link NLUServerConfiguration} for more information on the configuration options.
      *
      * @param eventRegistry      the {@link EventDefinitionRegistry} containing the events defined in the current bot
-     * @param configuration      the {@link Configuration} holding the DialogFlow project ID and language code
+     * @param configuration      the {@link Configuration} holding the NLUServer project ID and language code
      * @param recognitionMonitor the {@link RecognitionMonitor} instance storing intent matching information
      * @throws NullPointerException if the provided {@code eventRegistry}, {@code configuration} or one of the mandatory
      *                              {@code configuration} value is {@code null}.
@@ -131,6 +131,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
             throw new XatkitException("An error occurred when creating the NLU Server client, see attached "
                     + "exception", e);
         }
+        this.nluServerStateMapper = new NLUServerStateMapper(this.configuration);
         this.nluServerEntityReferenceMapper = new NLUServerEntityReferenceMapper();
         this.nluServerIntentMapper = new NLUServerIntentMapper(this.configuration,
                 this.nluServerEntityReferenceMapper);
@@ -144,9 +145,9 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * {@inheritDoc}
      * <p>
      * This method reuses the information contained in the provided {@link IntentDefinition} to create a new
-     * DialogFlow {@link Intent} and add it to the current project.
+     * NLUServer {@link Intent} and add it to the current project.
      *
-     * @param intentDefinition the {@link IntentDefinition} to register to the DialogFlow project
+     * @param intentDefinition the {@link IntentDefinition} to register to the NLUServer project
      * @throws NullPointerException if the provided {@code intentDefinition} is {@code null}
      * @see NLUServerIntentMapper
      */
@@ -165,23 +166,28 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
 
     }
 
-    @Override
+
     /**
-     * {@inheritDoc}
+     *  {@inheritDoc}
      * <p>
      * This method reuses the information contained in the provided {@link State} to create a new
      *  {@link } and add it to the current project.
      *
-     * @param intentDefinition the {@link IntentDefinition} to register to the DialogFlow project
+     * @param state the {@link State} to register to the NLUServer project
      * @throws NullPointerException if the provided {@code intentDefinition} is {@code null}
      * @see NLUServerIntentMapper
      */
+    @Override
     public void registerState(@NonNull State state) throws IntentRecognitionProviderException {
         checkNotNull(state.getName(), "Cannot register the %s with the provided name %s",
                 State.class.getSimpleName());
         if (this.bot.containsNLUContext(state.getName())) {
-            throw new IntentRecognitionProviderException(MessageFormat.format("Intent {0} already exists in the agent"
+            throw new IntentRecognitionProviderException(MessageFormat.format("State {0} already exists in the agent"
                     + " and will not be updated", state.getName()));
+        }
+        if (state.getAllAccessedIntents().isEmpty()) {
+            throw new IntentRecognitionProviderException(MessageFormat.format("State {0} has no outgoing intents, it "
+                    + "won't be registered", state.getName()));
         }
         Log.debug("Registering NLUServer state {0}", state.getName());
         NLUContext nluContext = nluServerStateMapper.mapStateDefinition(state);
@@ -194,9 +200,9 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * {@inheritDoc}
      * <p>
      * This method reuses the information contained in the provided {@link EntityDefinition} to create a new
-     * DialogFlow {@link EntityType} and add it to the current project.
+     * NLUServer {@link EntityType} and add it to the current project.
      *
-     * @param entityDefinition the {@link EntityDefinition} to register to the DialogFlow project
+     * @param entityDefinition the {@link EntityDefinition} to register to the NLUServer project
      * @throws NullPointerException if the provided {@code entityDefinition} is {@code null}
      */
     public void registerEntityDefinition(@NonNull EntityDefinition entityDefinition)
@@ -287,7 +293,7 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * <p>
      * This method checks every second whether the underlying ML Engine has finished its training. Note that this
      * method is blocking as long as the ML Engine training is not terminated, and may not terminate if an issue
-     * occurred on the DialogFlow side.
+     * occurred on the NLUServer side.
      */
     @Override
     public void trainMLEngine() throws IntentRecognitionProviderException {
@@ -382,12 +388,12 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      * Throws a {@link IntentRecognitionProviderException} if the provided
      * {@link NLUServerIntentRecognitionProvider} is shutdown.
      * <p>
-     * This method is typically called in methods that need to interact with the DialogFlow API, and cannot complete
+     * This method is typically called in methods that need to interact with the NLUServer API, and cannot complete
      * if the connector is shutdown.
      *
-     * @throws IntentRecognitionProviderException if the provided {@code DialogFlowIntentRecognitionProvider} is
+     * @throws IntentRecognitionProviderException if the provided {@code NLUServerIntentRecognitionProvider} is
      *                                            shutdown
-     * @throws NullPointerException               if the provided {@code DialogFlowIntentRecognitionProvider} is
+     * @throws NullPointerException               if the provided {@code NLUServerIntentRecognitionProvider} is
      *                                            {@code null}
      */
     private void checkNotShutdown() throws IntentRecognitionProviderException {

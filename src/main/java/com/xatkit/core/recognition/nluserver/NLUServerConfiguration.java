@@ -225,7 +225,7 @@ public class NLUServerConfiguration {
 
 
         this.forceOverwrite = baseConfiguration.getBoolean(FORCE_OVERWRITE, false);
-        this.confidenceThreshold = baseConfiguration.getFloat(CONFIDENCE_THRESHOLD_KEY, 0);
+        this.confidenceThreshold = baseConfiguration.getFloat(CONFIDENCE_THRESHOLD_KEY, 0.3f);
         this.maxNumTokens = baseConfiguration.getInt(MAX_NUM_TOKENS, 30);
         this.stemmer = baseConfiguration.getBoolean(STEMMER, true);
         this.embeddingDim = baseConfiguration.getInt(EMBEDDING_DIM, 16);

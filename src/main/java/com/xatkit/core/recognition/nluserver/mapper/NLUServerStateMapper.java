@@ -43,9 +43,6 @@ public class NLUServerStateMapper {
     /**
      * Maps the provided {@link State} to a Xatkit NLUServer {@link NLUContext}.
      * <p>
-     * This method sets the name of the created intent, its training sentences, and the context(s) associated to its
-     * parameters. Note that this method does not check whether access {@link com.xatkit.intent.EntityDefinition}s
-     * actually exist in the DialogFlow agent.
      *
      * @param state the {@link State} to map
      * @return the created {@link }
@@ -78,7 +75,7 @@ public class NLUServerStateMapper {
 
     /**
      * Registers the names of the intents that could be matched from this State to later transform them into actual the
-     * {@link Intent} references
+     * {@link Intent} references.
      * @see NLUServerIntentMapper
      * @param linkedIntents the {@link IntentDefinition} accessible from the {@link State}
      */

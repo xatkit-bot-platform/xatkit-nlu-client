@@ -1,5 +1,7 @@
 
 import com.xatkit.core.XatkitBot;
+import com.xatkit.core.recognition.IntentRecognitionProviderFactory;
+import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
 import com.xatkit.plugins.react.platform.ReactPlatform;
 import com.xatkit.plugins.react.platform.io.ReactEventProvider;
 import com.xatkit.plugins.react.platform.io.ReactIntentProvider;
@@ -73,7 +75,7 @@ public class SampleBotTest {
                 .moveTo(awaitingInput);
 
         val defaultFallback = fallbackState()
-                .body(context -> reactPlatform.reply(context, "Sorry, I didn't, get it"));
+                .body(context -> reactPlatform.reply(context, "Sorry, I didn't get it"));
 
         val botModel = model()
                 .usePlatform(reactPlatform)
@@ -83,7 +85,11 @@ public class SampleBotTest {
                 .defaultFallbackState(defaultFallback);
 
         Configuration botConfiguration = new BaseConfiguration();
-
+        botConfiguration.addProperty(IntentRecognitionProviderFactory.INTENT_PROVIDER_KEY,
+                NLUServerConfiguration.NLUSERVER_INTENT_PROVIDER);
+        botConfiguration.addProperty(NLUServerConfiguration.BOT_NAME, "SimpleBot");
+        botConfiguration.addProperty(NLUServerConfiguration.URL, "http://127.0.0.1:8000");
+        botConfiguration.addProperty(NLUServerConfiguration.FORCE_OVERWRITE, true);
 
         XatkitBot xatkitBot = new XatkitBot(botModel, botConfiguration);
         xatkitBot.run();

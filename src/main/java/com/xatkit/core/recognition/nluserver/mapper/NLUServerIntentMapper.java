@@ -1,36 +1,32 @@
 package com.xatkit.core.recognition.nluserver.mapper;
 
-
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.intent.ContextParameter;
 import com.xatkit.intent.IntentDefinition;
-import fr.inria.atlanmod.commons.log.Log;
 import lombok.NonNull;
 
 import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static fr.inria.atlanmod.commons.Preconditions.checkNotNull;
 
 /**
- * Maps {@link IntentDefinition} instances to DialogFlow {@link Intent}s.
+ * Maps {@link IntentDefinition} instances to Xatkit's NLU Server {@link Intent}s.
  * <p>
  * This class is used to translate generic {@link IntentDefinition}s to platform-specific construct representing
- * DialogFlow intents.
+ * NLUServer intents.
  */
 public class NLUServerIntentMapper {
 
     /**
      * The {@link NLUServerConfiguration}.
      * <p>
-     * This configuration is used to retrieve the DialogFlow project ID, and use it to generate the {@link Intent} name.
+     * This configuration is used to retrieve the NLUServer bot project configuration
      */
-    private NLUServerConfiguration configuration;
+    private final NLUServerConfiguration configuration;
 
     /**
      * The {@link NLUServerEntityReferenceMapper} used to map accesses to {@link com.xatkit.intent.EntityDefinition}s.
@@ -42,12 +38,12 @@ public class NLUServerIntentMapper {
 
     /**
      * Constructs a {@link NLUServerIntentMapper} with the provided {@code configuration} and {@code
-     * dialogFlowEntityReferenceMapper}.
+     * nluServerEntityReferenceMapper}.
      *
      * @param configuration                   the {@link NLUServerConfiguration}
      * @param nluServerEntityReferenceMapper the {@link NLUServerEntityReferenceMapper} used to map accesses to
      *                                        {@link com.xatkit.intent.EntityDefinition}s
-     * @throws NullPointerException if the provided {@code configuration} or {@code dialogFlowEntityReferenceMapper}
+     * @throws NullPointerException if the provided {@code configuration} or {@code nluServerEntityReferenceMapper}
      *                              is {@code null}
      */
     public NLUServerIntentMapper(@NonNull NLUServerConfiguration configuration,
@@ -61,7 +57,7 @@ public class NLUServerIntentMapper {
      * <p>
      * This method sets the name of the created intent, its training sentences, and the context(s) associated to its
      * parameters. Note that this method does not check whether access {@link com.xatkit.intent.EntityDefinition}s
-     * actually exist in the DialogFlow agent.
+     * actually exist in the NLUServer client.
      *
      * @param intentDefinition the {@link IntentDefinition} to map
      * @return the created {@link Intent}
@@ -76,7 +72,6 @@ public class NLUServerIntentMapper {
         Intent nluIntent = new Intent(adaptIntentDefinitionNameToNLUServer(intentDefinition.getName()));
 
         nluIntent.setTrainingSentences(createTrainingPhrases(intentDefinition));
-
 
        /* List<String> inContextNames = createInContextNames(intentDefinition);
         builder.addAllInputContextNames(inContextNames);
@@ -102,7 +97,7 @@ public class NLUServerIntentMapper {
     }
 
     /**
-     * Creates the {@link com.google.cloud.dialogflow.v2.Intent.TrainingPhrase}s for the provided {@code
+     * Creates the training phrases for the provided {@code
      * intentDefinition}.
      *
      * @param intentDefinition the {@link IntentDefinition} to create the
