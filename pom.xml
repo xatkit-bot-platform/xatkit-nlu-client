@@ -19,6 +19,7 @@
 
     <properties>
         <lombok.version>1.18.12</lombok.version>
+        <unirest.version>3.13.6</unirest.version>
     </properties>
 
     <dependencies>
@@ -80,8 +81,7 @@
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
-            <version>3.13.6</version>
-            <classifier>standalone</classifier>
+             <classifier>standalone</classifier>
         </dependency>
 
 
@@ -100,6 +100,14 @@
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
+            </dependency>
+
+            <!-- Unirest as a snazzy new standalone jar with shaded dependencies -->
+            <dependency>
+                <groupId>com.konghq</groupId>
+                <artifactId>unirest-java</artifactId>
+                <version>${unirest.version}</version>
+                <classifier>standalone</classifier>
             </dependency>
 
 
