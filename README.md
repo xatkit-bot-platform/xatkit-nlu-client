@@ -12,10 +12,6 @@ You can run it locally (by default it will run on `http://127.0.0.1:8000`.
 
 Obviously, [Xatkit itself also needs to be installed](https://github.com/xatkit-bot-platform/xatkit/wiki/Build-Xatkit).
 
-> Right now, you need [this runtime branch](https://github.com/xatkit-bot-platform/xatkit-runtime/tree/registering-states-in-intent-providers). This 
-> will not be needed once we do further testing and merge the changes in the runtime.
-
- 
 Then, add the following dependency in your bot's `pom.xml` file:
 
 ```xml
