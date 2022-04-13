@@ -25,6 +25,7 @@ public class NLUContext {
         this.name = name;
         intents = new ArrayList<>();
         intentNames = new ArrayList<>();
+        entities = new ArrayList<>();
     }
 
     public void addIntent(Intent i) {

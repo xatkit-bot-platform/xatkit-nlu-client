@@ -135,6 +135,7 @@ public class NLUServerIntentMapper {
             EntityParameter parameter =
                     new EntityParameter(contextParameter.getName(), contextParameter.getTextFragments().get(0),
                             entityTypeName);
+            results.add(parameter);
         }
 
         return results;

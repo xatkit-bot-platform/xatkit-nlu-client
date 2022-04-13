@@ -102,8 +102,7 @@ public class NLUServerClientAPIWrapper {
                         .asJson();
                 if (responseInitialization.getStatus() == 200) {
                     isDeployed = true;
-                }
-                else {
+                } else {
                     Log.warn("Error during bot initialization: {0}", responseInitialization.getStatusText());
                 }
             } catch(Exception e) {
