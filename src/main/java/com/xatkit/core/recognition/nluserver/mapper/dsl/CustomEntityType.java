@@ -15,13 +15,11 @@ import java.util.List;
  */
 public class CustomEntityType extends EntityType {
 
-    private final String name;
     private List<CustomEntityTypeEntry> entries;
 
-    public CustomEntityType(String name, String varName) {
+    public CustomEntityType(String name) {
         super(name);
-        this.name = varName;
-        this.entries = new ArrayList<CustomEntityTypeEntry>();
+        this.entries = new ArrayList<>();
     }
 
     /**
@@ -39,7 +37,17 @@ public class CustomEntityType extends EntityType {
         return this.entries;
     }
 
-    public void addMappingEntry(CustomEntityTypeEntry entry) {
+    public void addEntry(CustomEntityTypeEntry entry) {
         this.entries.add(entry);
     }
+
+    /**
+     * add all entries
+     *
+     */
+    public void addAllEntries(List<CustomEntityTypeEntry> entries) {
+        this.entries.addAll(entries);
+    }
+
+
 }

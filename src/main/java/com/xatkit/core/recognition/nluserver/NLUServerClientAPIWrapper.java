@@ -3,7 +3,12 @@ package com.xatkit.core.recognition.nluserver;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.BotData;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Classification;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityType;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityTypeEntry;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityParameter;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.MatchedParam;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.NLUContext;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
 import fr.inria.atlanmod.commons.log.Log;
@@ -11,8 +16,8 @@ import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
-import lombok.NonNull;
-import org.json.JSONObject;
+import kong.unirest.json.JSONObject;
+
 import static java.util.Objects.isNull;
 
 import java.util.ArrayList;
@@ -35,7 +40,7 @@ public class NLUServerClientAPIWrapper {
 
     private final NLUServerConfiguration configuration;
 
-    private BotData bot;
+    private final BotData bot;
 
     private boolean iamshutdown;
 
@@ -46,7 +51,7 @@ public class NLUServerClientAPIWrapper {
      * @throws IntentRecognitionProviderException if the provided {@code configuration} does not
      *                                            contain a valid url
      */
-    public NLUServerClientAPIWrapper(@NonNull NLUServerConfiguration configuration, BotData bot) throws IntentRecognitionProviderException {
+    public NLUServerClientAPIWrapper(NLUServerConfiguration configuration, BotData bot) throws IntentRecognitionProviderException {
 
         if (isNull(bot) || isNull(configuration)) {
             throw new IntentRecognitionProviderException("An error occurred when initializing the NLUServer client: "
@@ -77,7 +82,7 @@ public class NLUServerClientAPIWrapper {
                     .header("Content-Type", "application/json")
                     .header("Accept", "application/json")
                     .body(fields).asJson();
-        if (response.getStatus()==200) {
+        if (response.getStatus() == 200) {
             this.bot.setUUID(response.getBody().getObject().get("uuid").toString());
             try {
 
@@ -86,7 +91,7 @@ public class NLUServerClientAPIWrapper {
                 ArrayList<NLUContextDTO> nluContextDTOs = botToContextList();
 
                 initializationFields.put("name", bot.getBotName());
-                initializationFields.put("contexts", nluContextDTOs );
+                initializationFields.put("contexts", nluContextDTOs);
 
 
                 HttpResponse<JsonNode> responseInitialization = Unirest.post("/bot/{botname}/initialize/")
@@ -101,8 +106,8 @@ public class NLUServerClientAPIWrapper {
                 else {
                     Log.warn("Error during bot initialization: {0}", responseInitialization.getStatusText());
                 }
-            }catch(Exception e){
-                System.out.println(e.toString());
+            } catch(Exception e) {
+                System.out.println(e.getMessage());
             }
         } else {
             Log.warn("Error during bot creation: {0}", response.getStatusText());
@@ -140,7 +145,7 @@ public class NLUServerClientAPIWrapper {
     }
 
     public boolean deployAndTrainBot() {
-        boolean isDeployed = false;
+        boolean isDeployed;
         boolean isTrained = false;
         isDeployed = deployBot();
         if (isDeployed) {
@@ -179,15 +184,24 @@ public class NLUServerClientAPIWrapper {
             JSONArray matchedUtterances = predictionResult.getJSONArray("matched_utterances");
             JSONArray predictionValues = predictionResult.getJSONArray("prediction_values");
             JSONArray intents = predictionResult.getJSONArray("intents");
+            JSONObject matchedParams = predictionResult.getJSONObject("matched_params");
+
 
             prediction = new Prediction();
 
-            for (int i = 0; i <  predictionValues.length(); i++) {
+            for (int i = 0; i < predictionValues.length(); i++) {
                 Classification c = new Classification();
                 c.setIntent(this.bot.getIntent(intents.getString(i)));
                 c.setScore(predictionValues.getFloat(i));
                 c.setMatchedUtterance((matchedUtterances.getString(i)));
                 prediction.addClassification(c);
+            }
+
+            Map<String, Object> mapParams = matchedParams.toMap();
+            //Iterate over the map and add the params to the prediction
+            for (Map.Entry<String, Object> entry : mapParams.entrySet()) {
+                MatchedParam p = new MatchedParam(entry.getKey(), entry.getValue().toString());
+                prediction.addMatchedParam(p);
             }
         } else {
             Log.warn("Error during bot prediction {0}", response.getStatusText() + response.getBody().toString());
@@ -195,32 +209,75 @@ public class NLUServerClientAPIWrapper {
         return prediction;
     }
 
-    private class NLUContextDTO
-    {
+    private class NLUContextDTO {
         String name;
         ArrayList<IntentDTO> intents = new ArrayList<>();
-
+        //name syntax to map the  Python names in the server
+        ArrayList<EntityTypeDTO> entities = new ArrayList<>();
     }
 
-    private class IntentDTO
-    {
+    //We use a single class to represent all the possible entites, either custom or not
+    private class EntityTypeDTO {
+        String name;
+        List<CustomEntityEntryDTO> entries = new ArrayList<>();
+    }
+
+    private class CustomEntityEntryDTO {
+        String value;
+        ArrayList<String> synonyms = new ArrayList<>();
+    }
+
+    private class IntentDTO {
         String name;
         List<String> training_sentences = new ArrayList<>();
+        List<EntityReferenceDTO> entity_parameters = new ArrayList<>();
     }
 
+    private class EntityReferenceDTO {
+        String fragment;
+        String name;
+        EntityTypeDTO entity;
+    }
 
     private ArrayList<NLUContextDTO> botToContextList() {
+
+        Map<String, EntityTypeDTO> mapEntityTypes = new HashMap<>();
         ArrayList<NLUContextDTO> nluContextDTOs = new ArrayList<>();
 
         for (NLUContext c: bot.getNluContexts()) {
             NLUContextDTO cDTO = new NLUContextDTO();
             cDTO.name = c.getName();
-            for (Intent i: c.getIntents())
-            {
+
+            if (c.getEntities() != null) {
+
+                for (EntityType e : c.getEntities()) {
+                    EntityTypeDTO etDTO = new EntityTypeDTO();
+                    etDTO.name = e.getName();
+                    if (e instanceof CustomEntityType) {
+                        for (CustomEntityTypeEntry entry : ((CustomEntityType) e).getEntries()) {
+                            CustomEntityEntryDTO entryDTO = new CustomEntityEntryDTO();
+                            entryDTO.value = entry.getValue();
+                            entryDTO.synonyms.addAll(entry.getSynonyms());
+                            etDTO.entries.add(entryDTO);
+                        }
+                        cDTO.entities.add(etDTO);
+                        mapEntityTypes.put(etDTO.name, etDTO);
+                    }
+                }
+            }
+
+            for (Intent i: c.getIntents()) {
                 IntentDTO iDTO = new IntentDTO();
                 iDTO.name = i.getName();
                 iDTO.training_sentences = i.getTrainingSentences();
                 cDTO.intents.add(iDTO);
+                for (EntityParameter er: i.getParameters()) {
+                    EntityReferenceDTO erDTO = new EntityReferenceDTO();
+                    erDTO.fragment = er.getFragment();
+                    erDTO.name = er.getName();
+                    erDTO.entity = mapEntityTypes.get(er.getType().getName());
+                    iDTO.entity_parameters.add(erDTO);
+                }
             }
 
             nluContextDTOs.add(cDTO);
