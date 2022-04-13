@@ -1,9 +1,11 @@
 package com.xatkit.core.recognition.nluserver.mapper;
 
+import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityType;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.CompositeEntityDefinition;
 import com.xatkit.intent.CustomEntityDefinition;
 import com.xatkit.intent.EntityDefinition;
+import com.xatkit.intent.IntentDefinition;
 import com.xatkit.intent.MappingEntityDefinition;
 import com.xatkit.intent.MappingEntityDefinitionEntry;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityReferenceMapper;
@@ -80,29 +82,30 @@ public class NLUServerEntityMapper {
      * @return the created {@link EntityType}
      * @throws NullPointerException     if the provided {@code entityDefinition} is {@code null}
      * @throws IllegalArgumentException if the {@code customEntityDefinition}'s type is not supported
-     * @see #createEntitiesForMapping(MappingEntityDefinition)
+     * @see #createEntityEntriesForMapping(MappingEntityDefinition)
      */
     private EntityType mapCustomEntityDefinition(@NonNull CustomEntityDefinition customEntityDefinition) {
-      /* TO IMPLEMENT
+        String entityName = customEntityDefinition.getName();
+        CustomEntityType entityType = new CustomEntityType(adaptEntityTypeNameToNLUServer(entityName));
 
-      String entityName = customEntityDefinition.getName();
-        EntityType.Builder builder = EntityType.newBuilder().setDisplayName(entityName);
         if (customEntityDefinition instanceof MappingEntityDefinition) {
             MappingEntityDefinition mappingEntityDefinition = (MappingEntityDefinition) customEntityDefinition;
-            List<EntityType.Entity> entities = createEntitiesForMapping(mappingEntityDefinition);
-            builder.setKind(EntityType.Kind.KIND_MAP).addAllEntities(entities);
-        } else if (customEntityDefinition instanceof CompositeEntityDefinition) {
+            List<CustomEntityTypeEntry> entries = createEntityEntriesForMapping(mappingEntityDefinition);
+            entityType.addAllEntries(entries);
+        /* Composite entitites are not yet supported in Xatkit NLUServer
+         else if (customEntityDefinition instanceof CompositeEntityDefinition) {
+
             CompositeEntityDefinition compositeEntityDefinition = (CompositeEntityDefinition) customEntityDefinition;
             List<EntityType.Entity> entities = createEntitiesForComposite(compositeEntityDefinition);
             builder.setKind(EntityType.Kind.KIND_LIST).addAllEntities(entities);
-        } else {
+        } */
+        }
+        else {
             throw new IllegalArgumentException(MessageFormat.format("Cannot register the provided {0}, unsupported {1}",
                     customEntityDefinition.getClass().getSimpleName(), EntityDefinition.class.getSimpleName()));
         }
-        return builder.build();
+        return entityType;
 
-       */
-        return null;
     }
 
     /**
@@ -117,19 +120,30 @@ public class NLUServerEntityMapper {
      * @return the created {@link List} of NLUServer {@link CustomEntityTypeEntry} instances
      * @throws NullPointerException if the provided {@code mappingEntityDefinition} is {@code null}
      */
-    private List<CustomEntityTypeEntry> createEntitiesForMapping(@NonNull MappingEntityDefinition mappingEntityDefinition) {
-        /* TO IMPLEMENT
-        List<EntityType.Entity> entities = new ArrayList<>();
+    private List<CustomEntityTypeEntry> createEntityEntriesForMapping(@NonNull MappingEntityDefinition mappingEntityDefinition) {
+        List<CustomEntityTypeEntry> entries = new ArrayList<>();
 
-        for (MappingEntityDefinitionEntry entry : mappingEntityDefinition.getEntries()) {
-            EntityType.Entity.Builder builder = EntityType.Entity.newBuilder().setValue(entry.getReferenceValue())
-                    .addAllSynonyms(entry.getSynonyms()).addSynonyms(entry.getReferenceValue());
-            entities.add(builder.build());
+        for (MappingEntityDefinitionEntry entryMapping : mappingEntityDefinition.getEntries()) {
+            CustomEntityTypeEntry newEntry = new CustomEntityTypeEntry(entryMapping.getReferenceValue());
+            newEntry.addAllSynonyms(entryMapping.getSynonyms());
+            entries.add(newEntry);
         }
-        return entities;
+        return entries;
 
-         */
-        return null;
+    }
+
+
+    /**
+     * Adapts the provided {@code EntityDefinition. name} by removing its {@code _} as this may cause issues when
+     * tokenizing the names after ner replacing in the server.
+     * <p>
+     *
+     * @param name the {@link EntityType} name to adapt
+     * @return the adapted {@code intentDefinitionName}
+     * @throws NullPointerException if the provided {@code name} is {@code null}
+     */
+    private String adaptEntityTypeNameToNLUServer(@NonNull String name) {
+        return name.replaceAll("_", "");
     }
 
 

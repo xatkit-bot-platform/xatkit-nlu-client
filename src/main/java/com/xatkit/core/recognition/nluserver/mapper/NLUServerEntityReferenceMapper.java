@@ -207,19 +207,20 @@ public class NLUServerEntityReferenceMapper extends EntityMapper {
 
 
     /**
-     * Maps the provided {@code customEntityDefinition} to its DialogFlow implementation.
+     * Maps the provided {@code customEntityDefinition} to its NLUServer implementation.
      * <p>
-     * DialogFlow entities are registered independently from the intents. This two-step process allows to reference
+     * Entities are registered independently from the intents. This two-step process allows to reference
      * entities with their names, and do not require to store any mapping information in the
      * {@link NLUServerEntityReferenceMapper}.
      *
      * @param customEntityDefinition the {@link CustomEntityDefinition} to retrieve the concrete entity
      *                               {@link String} from
-     * @return a {@link String} identifying the DialogFlow entity corresponding to the provided {@code
-     * customEntityDefinition}
+     * @return a {@link String} identifying the NLUServer entity corresponding to the provided {@code
+     * customEntityDefinition, right now }
      */
     @Override
     protected String getMappingForCustomEntity(CustomEntityDefinition customEntityDefinition) {
-        return "@" + customEntityDefinition.getName();
+        //return "@" + customEntityDefinition.getName();
+        return customEntityDefinition.getName();
     }
 }

@@ -43,4 +43,17 @@ public class CustomEntityTypeEntry {
         return this.synonyms;
     }
 
+    /*
+    * add all synonyms to an entry
+    */
+    public void addAllSynonyms(List<String> synonyms) {
+        this.synonyms.addAll(synonyms);
+    }
+    /*
+    * add a synonym to an entry
+    */
+    public void addSynonym(String synonym) {
+        this.synonyms.add(synonym);
+    }
+
 }

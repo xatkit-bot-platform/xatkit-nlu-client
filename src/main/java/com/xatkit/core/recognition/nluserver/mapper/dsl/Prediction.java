@@ -6,8 +6,12 @@ import java.util.List;
 public class Prediction {
     private List<Classification> classifications;
 
+    private List<MatchedParam> matchedParams;
+
     public Prediction() {
+
         this.classifications = new ArrayList<>();
+        this.matchedParams = new ArrayList<>();
     }
 
     public Classification getTopClassification() {
@@ -30,6 +34,14 @@ public class Prediction {
 
     public void addClassification(Classification c) {
         classifications.add(c);
+    }
+
+    public void addMatchedParam(MatchedParam mp) {
+        matchedParams.add(mp);
+    }
+
+    public List<MatchedParam> getMatchedParams() {
+        return matchedParams;
     }
 
 }

@@ -12,6 +12,7 @@ import com.xatkit.core.recognition.nluserver.mapper.NLUServerStateMapper;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerRecognizedIntentMapper;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.BotData;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Classification;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityParameter;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
@@ -207,46 +208,20 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      */
     public void registerEntityDefinition(@NonNull EntityDefinition entityDefinition)
             throws IntentRecognitionProviderException {
-        /* TODO
-        checkNotShutdown();
+
         if (entityDefinition instanceof BaseEntityDefinition) {
             BaseEntityDefinition baseEntityDefinition = (BaseEntityDefinition) entityDefinition;
             Log.trace("Skipping registration of {0} ({1}), {0} are natively supported by DialogFlow",
                     BaseEntityDefinition.class.getSimpleName(), baseEntityDefinition.getEntityType().getLiteral());
         } else if (entityDefinition instanceof CustomEntityDefinition) {
-            Log.debug("Registering {0} {1}", CustomEntityDefinition.class.getSimpleName(), entityDefinition.getName());
-            EntityType entityType = this.registeredEntityTypes.get(entityDefinition.getName());
-            if (isNull(entityType)) {
-                if (entityDefinition instanceof CompositeEntityDefinition) {
-                    this.registerReferencedEntityDefinitions((CompositeEntityDefinition) entityDefinition);
-                }
-                entityType =
-                        dialogFlowEntityMapper.mapEntityDefinition(entityDefinition);
-                try {
-                    /*
-                     * Store the EntityType returned by the DialogFlow API: some fields such as the name are
-                     * automatically set by the platform.
+            Log.debug("Registering NLU server entity {0} {1}", CustomEntityDefinition.class.getSimpleName(),
+                    entityDefinition.getName());
+            EntityType entityType = nluServerEntityMapper.mapEntityDefinition(entityDefinition);
+            this.bot.addEntityType(entityType);
 
-                    EntityType createdEntityType =
-                            this.dialogFlowClients.getEntityTypesClient().createEntityType(projectAgentName,
-                                    entityType);
-                    this.registeredEntityTypes.put(entityDefinition.getName(), createdEntityType);
-                } catch (FailedPreconditionException e) {
-                    throw new IntentRecognitionProviderException(MessageFormat.format("Cannot register the entity "
-                            + "{0}, the entity already exists", entityDefinition), e);
-                }
-            } else {
-                Log.debug("{0} {1} is already registered", EntityType.class.getSimpleName(),
-                        entityDefinition.getName());
-            }
-        } else {
-            throw new IntentRecognitionProviderException(MessageFormat.format("Cannot register the provided {0}, "
-                            + "unsupported {1}", entityDefinition.getClass().getSimpleName(),
-                    EntityDefinition.class.getSimpleName()));
         }
-        */
-
     }
+
 
     /**
      * Registers the {@link EntityDefinition}s referred by the provided {@code compositeEntityDefinition}.
@@ -315,11 +290,20 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
     /**
      * We link the states ({@link NLUContext}) with the {@link Intent}s accessible from them based on the previous
      * registered names
+     *
+     * We also direclty reference the EntityTypes from the context (as needed by the NLUServer)
+     * and
      */
     private void prepareTrainingData() {
         for (NLUContext c: bot.getNluContexts()) {
             for (String i: c.getIntentNames()) {
                 c.addIntent(bot.getIntent(i));
+            }
+            for (Intent i: c.getIntents()) {
+                for (EntityParameter p: i.getParameters()) {
+                    p.setType(bot.getEntityType(p.getTypeName()));
+                    c.addEntityType(p.getType());
+                }
             }
         }
     }
@@ -358,9 +342,10 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
                 List<RecognizedIntent> recognizedIntents =
                         nluServerRecognizedIntentMapper.mapRecognitionResult(prediction);
                 recognizedIntent = getBestCandidate(recognizedIntents, context);
-                // TODO ADD potential matched entities to the recognized intent recognizedIntent.getValues().addAll
-                //  (nluServerRecognizedIntentMapper.mapParameterValues(
-                //        (IntentDefinition) recognizedIntent.getDefinition(), recognitionResult.getEntities()));
+                // we add potential matched entities to the recognized intent
+                recognizedIntent.getValues().addAll(
+                        nluServerRecognizedIntentMapper.mapParameterValues(
+                        (IntentDefinition) recognizedIntent.getDefinition(), prediction.getMatchedParams()));
             }
 
             if (nonNull(recognitionMonitor)) {

@@ -18,8 +18,8 @@ public class BotData {
     // Internal UUID assigned by the server, not used by now
     private String UUID;
 
-    @NonNull
-    private NLUServerConfiguration config;
+    //@NonNull
+    //private NLUServerConfiguration config;
 
     @NonNull
     private List<NLUContext> nluContexts;
@@ -48,6 +48,10 @@ public class BotData {
         return (this.intents.stream().filter(i -> i.getName().equals(name)).findAny().orElse(null));
     }
 
+    public EntityType getEntityType(String name) {
+        return (this.entities.stream().filter(i -> i.getName().equals(name)).findAny().orElse(null));
+    }
+
     public void addIntent(Intent i) {
         this.intents.add(i);
     }
@@ -60,5 +64,8 @@ public class BotData {
         return (this.nluContexts.stream().filter(c -> c.getName().equals(name)).findAny().orElse(null));
     }
 
+    public void addEntityType(EntityType entityType) {
+        this.entities.add(entityType);
+    }
 
 }

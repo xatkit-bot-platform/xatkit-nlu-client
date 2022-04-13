@@ -40,5 +40,12 @@ public class Intent {
         return this;
     }
 
+    /**
+     * Add all given parameters to the {@link Intent}.
+     *
+     */
+    public void addAllParameters(List<EntityParameter> parameters) {
+        this.parameters.addAll(parameters);
+    }
 
 }

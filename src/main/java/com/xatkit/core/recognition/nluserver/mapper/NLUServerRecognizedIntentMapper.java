@@ -3,6 +3,7 @@ package com.xatkit.core.recognition.nluserver.mapper;
 import com.xatkit.core.EventDefinitionRegistry;
 import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Classification;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.MatchedParam;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.ContextParameter;
 import com.xatkit.intent.ContextParameterValue;
@@ -17,6 +18,7 @@ import lombok.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.xatkit.core.recognition.IntentRecognitionProvider.DEFAULT_FALLBACK_INTENT;
@@ -93,6 +95,44 @@ public class NLUServerRecognizedIntentMapper {
 
 
     /**
+     * Converts the provided {@code matched params} to {@link ContextParameterValue}.
+     * <p>
+     * This method discards the ones that do not correspond to a {@link ContextParameter} of the provided {@code
+     * intentDefinition}.
+     * <p>
+     * This method is not invoked when calling #mapRecognitionResult(Prediction)} because it is not
+     * necessary to map the {@link ContextParameterValue}s of all the extracted {@link RecognizedIntent}s
+     *
+     * It's only call once the getBestCandiate has been executed and we have a top ntent
+     * @param intentDefinition  the {@link IntentDefinition} containing the {@link ContextParameter}s to instantiate
+     * @param matchedParams the {@link MatchedParam} instances returned by XatkitNLUServer
+     * @return the created {@link ContextParameter}s
+     * @throws NullPointerException if the provided {@code intentDefinition} or {@code extractedEntities} is {@code
+     *                              null}
+     */
+    public List<ContextParameterValue> mapParameterValues(@NonNull IntentDefinition intentDefinition,
+                                                          @NonNull List<MatchedParam> matchedParams) {
+        List<ContextParameterValue> contextParameterValues = new ArrayList<>();
+
+        for (MatchedParam matchedParam : matchedParams) {
+            String paramName = matchedParam.getParamName();
+            String paramValue = matchedParam.getValue();
+            //We get the contextParameter object with our param name
+            ContextParameter contextParameter = intentDefinition.getParameter(paramName);
+            if (nonNull(contextParameter)) {
+                //If the parameter is actually part of the intent definition
+                ContextParameterValue contextParameterValue =
+                        IntentFactory.eINSTANCE.createContextParameterValue();
+                contextParameterValue.setContextParameter(contextParameter);
+                contextParameterValue.setValue(paramValue);
+                contextParameterValues.add(contextParameterValue);
+            }
+        }
+        return contextParameterValues;
+    }
+
+
+    /**
      * Reifies the provided NLUServer {@code intent} into an Xatkit {@link IntentDefinition}.
      * <p>
      * This method looks in the {@link EventDefinitionRegistry} for an {@link IntentDefinition} associated to the
@@ -114,64 +154,4 @@ public class NLUServerRecognizedIntentMapper {
     }
 
 
-    /**
-     * Build a context parameter value from the provided protobuf {@link Value}.
-     * <p>
-     * The returned value is assignable to {@link ContextParameterValue#setValue(Object)}, and is either a
-     * {@link String}, or a {@link Map} for nested struct {@link Value}s.
-     *
-     * @param fromValue the protobuf {@link Value} to translate
-     * @return the context parameter value
-     * @throws NullPointerException if the provided {@code fromValue} is {@code null}
-     */
-
-    /* TOOD
-    private Object buildParameterValue(@NonNull Value fromValue) {
-        if (fromValue.getKindCase().equals(Value.KindCase.STRUCT_VALUE)) {
-            Map<String, Object> parameterMap = new HashMap<>();
-            fromValue.getStructValue().getFieldsMap().forEach((key, value) -> {
-                if (!key.contains(".original")) {
-                    Object adaptedValue = buildParameterValue(value);
-                    parameterMap.put(key, adaptedValue);
-                }
-            });
-            return parameterMap;
-        } else {
-            return convertParameterValueToString(fromValue);
-        }
-    }
-    */
-
-    /**
-     * Converts the provided {@code value} into a {@link String}.
-     * <p>
-     * This method converts protobuf's {@link Value}s returned by DialogFlow into {@link String}s that can be
-     * assigned to {@link ContextParameterValue}s.
-     *
-     * @param value the protobuf {@link Value} to convert
-     * @return the {@link String} representation of the provided {@code value}.
-     * @throws NullPointerException if the provided {@code value} is {@code null}
-     */
-    /*
-    protected String convertParameterValueToString(@NonNull Value value) {
-        switch (value.getKindCase()) {
-            case STRING_VALUE:
-                return value.getStringValue();
-            case NUMBER_VALUE:
-                DecimalFormatSymbols decimalFormatSymbols = new DecimalFormatSymbols();
-                decimalFormatSymbols.setDecimalSeparator('.');
-                DecimalFormat decimalFormat = new DecimalFormat("0.###", decimalFormatSymbols);
-                decimalFormat.setGroupingUsed(false);
-                return decimalFormat.format(value.getNumberValue());
-            case BOOL_VALUE:
-                return Boolean.toString(value.getBoolValue());
-            case NULL_VALUE:
-                return "null";
-            default:
-                // Includes LIST_VALUE and STRUCT_VALUE
-
-                Log.error("Cannot convert the provided value {0}", value);
-                return "";
-        }
-    }*/
 }

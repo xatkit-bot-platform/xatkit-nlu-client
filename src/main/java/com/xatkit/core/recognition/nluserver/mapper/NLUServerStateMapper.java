@@ -57,6 +57,7 @@ public class NLUServerStateMapper {
         NLUContext nluContext = new NLUContext(adaptStateDefinitionNameToNLUServer(state.getName()));
 
         nluContext.addIntentNames(getLinkedIntentNames(state.getAllAccessedIntents()));
+
         return nluContext;
     }
 
