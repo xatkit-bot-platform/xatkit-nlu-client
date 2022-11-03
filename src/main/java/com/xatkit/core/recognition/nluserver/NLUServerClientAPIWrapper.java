@@ -18,12 +18,12 @@ import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
 
-import static java.util.Objects.isNull;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Objects.isNull;
 
 
 /**
@@ -215,7 +215,7 @@ public class NLUServerClientAPIWrapper {
         ArrayList<EntityTypeDTO> entities = new ArrayList<>();
     }
 
-    //We use a single class to represent all the possible entites, either custom or not
+    //We use a single class to represent all the possible entities, either custom or not
     private class EntityTypeDTO {
         String name;
         List<CustomEntityEntryDTO> entries = new ArrayList<>();
@@ -259,9 +259,9 @@ public class NLUServerClientAPIWrapper {
                             entryDTO.synonyms.addAll(entry.getSynonyms());
                             etDTO.entries.add(entryDTO);
                         }
-                        cDTO.entities.add(etDTO);
-                        mapEntityTypes.put(etDTO.name, etDTO);
                     }
+                    cDTO.entities.add(etDTO);
+                    mapEntityTypes.put(etDTO.name, etDTO);
                 }
             }
 

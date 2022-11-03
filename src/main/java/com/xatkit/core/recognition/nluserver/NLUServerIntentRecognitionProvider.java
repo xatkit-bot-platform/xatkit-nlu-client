@@ -208,13 +208,13 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
      */
     public void registerEntityDefinition(@NonNull EntityDefinition entityDefinition)
             throws IntentRecognitionProviderException {
-
         if (entityDefinition instanceof BaseEntityDefinition) {
-            BaseEntityDefinition baseEntityDefinition = (BaseEntityDefinition) entityDefinition;
-            Log.trace("Skipping registration of {0} ({1}), {0} are natively supported by DialogFlow",
-                    BaseEntityDefinition.class.getSimpleName(), baseEntityDefinition.getEntityType().getLiteral());
+            Log.debug("Registering NLU server {0} {1}", BaseEntityDefinition.class.getSimpleName(),
+                    entityDefinition.getName());
+            EntityType entityType = nluServerEntityMapper.mapEntityDefinition(entityDefinition);
+            this.bot.addEntityType(entityType);
         } else if (entityDefinition instanceof CustomEntityDefinition) {
-            Log.debug("Registering NLU server entity {0} {1}", CustomEntityDefinition.class.getSimpleName(),
+            Log.debug("Registering NLU server {0} {1}", CustomEntityDefinition.class.getSimpleName(),
                     entityDefinition.getName());
             EntityType entityType = nluServerEntityMapper.mapEntityDefinition(entityDefinition);
             this.bot.addEntityType(entityType);

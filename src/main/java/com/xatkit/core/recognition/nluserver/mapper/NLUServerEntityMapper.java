@@ -1,16 +1,15 @@
 package com.xatkit.core.recognition.nluserver.mapper;
 
+import com.xatkit.core.recognition.nluserver.mapper.dsl.BaseEntityType;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityType;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityTypeEntry;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import com.xatkit.intent.BaseEntityDefinition;
 import com.xatkit.intent.CompositeEntityDefinition;
 import com.xatkit.intent.CustomEntityDefinition;
 import com.xatkit.intent.EntityDefinition;
-import com.xatkit.intent.IntentDefinition;
 import com.xatkit.intent.MappingEntityDefinition;
 import com.xatkit.intent.MappingEntityDefinitionEntry;
-import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityReferenceMapper;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityTypeEntry;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import lombok.NonNull;
 
 import java.text.MessageFormat;
@@ -50,9 +49,6 @@ public class NLUServerEntityMapper {
 
     /**
      * Maps the provided {@code entityDefinition} to a NLUServer {@link EntityType}.
-     * <p>
-     * This method does not support {@link BaseEntityDefinition}s, because base entities are already deployed in
-     * DialogFlow agents (and called system entities).
      *
      * @param entityDefinition the {@link EntityDefinition} to map
      * @return the created {@link EntityType}
@@ -63,9 +59,7 @@ public class NLUServerEntityMapper {
      */
     public EntityType mapEntityDefinition(@NonNull EntityDefinition entityDefinition) {
         if (entityDefinition instanceof BaseEntityDefinition) {
-            throw new IllegalArgumentException(MessageFormat.format("Cannot map the provided {0} {1}, base entities "
-                            + "are already mapped in DialogFlow", EntityDefinition.class.getSimpleName(),
-                    entityDefinition.toString()));
+            return mapBaseEntityDefinition((BaseEntityDefinition) entityDefinition);
         } else if (entityDefinition instanceof CustomEntityDefinition) {
             return mapCustomEntityDefinition((CustomEntityDefinition) entityDefinition);
         } else {
@@ -73,6 +67,20 @@ public class NLUServerEntityMapper {
                             + "{1}", entityDefinition.getClass().getSimpleName(),
                     EntityDefinition.class.getSimpleName()));
         }
+    }
+
+    /**
+     * Creates a Xatkit NLUServer {@link EntityType} from the provided {@code baseEntityDefinition}.
+     *
+     * @param baseEntityDefinition the {@link BaseEntityDefinition} to create an {@link EntityType} from
+     * @return the created {@link EntityType}
+     * @throws NullPointerException     if the provided {@code entityDefinition} is {@code null}
+     */
+    private EntityType mapBaseEntityDefinition(@NonNull BaseEntityDefinition baseEntityDefinition) {
+        String entityName = entityReferenceMapper.getMappingFor(baseEntityDefinition);
+        BaseEntityType entityType = new BaseEntityType(adaptEntityTypeNameToNLUServer(entityName));
+        return entityType;
+
     }
 
     /**
@@ -85,7 +93,7 @@ public class NLUServerEntityMapper {
      * @see #createEntityEntriesForMapping(MappingEntityDefinition)
      */
     private EntityType mapCustomEntityDefinition(@NonNull CustomEntityDefinition customEntityDefinition) {
-        String entityName = customEntityDefinition.getName();
+        String entityName = entityReferenceMapper.getMappingFor(customEntityDefinition);
         CustomEntityType entityType = new CustomEntityType(adaptEntityTypeNameToNLUServer(entityName));
 
         if (customEntityDefinition instanceof MappingEntityDefinition) {
@@ -105,7 +113,6 @@ public class NLUServerEntityMapper {
                     customEntityDefinition.getClass().getSimpleName(), EntityDefinition.class.getSimpleName()));
         }
         return entityType;
-
     }
 
     /**
@@ -132,9 +139,8 @@ public class NLUServerEntityMapper {
 
     }
 
-
     /**
-     * Adapts the provided {@code EntityDefinition. name} by removing its {@code _} as this may cause issues when
+     * Adapts the provided {@code EntityDefinition.name} by removing its {@code _} as this may cause issues when
      * tokenizing the names after ner replacing in the server.
      * <p>
      *
@@ -145,7 +151,4 @@ public class NLUServerEntityMapper {
     private String adaptEntityTypeNameToNLUServer(@NonNull String name) {
         return name.replaceAll("_", "");
     }
-
-
-
 }

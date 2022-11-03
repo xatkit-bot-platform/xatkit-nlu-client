@@ -3,26 +3,22 @@ package com.xatkit.core.recognition.nluserver.mapper;
 import com.xatkit.core.EventDefinitionRegistry;
 import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Classification;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.MatchedParam;
-import com.xatkit.intent.BaseEntityDefinition;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
 import com.xatkit.intent.ContextParameter;
 import com.xatkit.intent.ContextParameterValue;
 import com.xatkit.intent.IntentDefinition;
 import com.xatkit.intent.IntentFactory;
 import com.xatkit.intent.RecognizedIntent;
 import fr.inria.atlanmod.commons.log.Log;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
 import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.xatkit.core.recognition.IntentRecognitionProvider.DEFAULT_FALLBACK_INTENT;
-import static fr.inria.atlanmod.commons.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
