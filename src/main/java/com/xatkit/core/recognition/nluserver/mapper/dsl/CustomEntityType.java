@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 /**
- * Custom Entity that can be used in the {@link EntityParameter}s Ii is a specialized
+ * Custom Entity that can be used in the {@link EntityParameter}s. It is a specialized
  * {@link EntityType} representing an enumeration of values with possible synonyms
  *
  * @see CustomEntityTypeEntry
@@ -21,14 +21,6 @@ public class CustomEntityType extends EntityType {
         super(name);
         this.entries = new ArrayList<>();
     }
-
-    /**
-     * @return the varName
-     */
-    public String getVarName() {
-        return this.name;
-    }
-
 
     /**
      * @return the entries

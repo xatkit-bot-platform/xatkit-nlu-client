@@ -18,12 +18,12 @@ import kong.unirest.Unirest;
 import kong.unirest.json.JSONArray;
 import kong.unirest.json.JSONObject;
 
-import static java.util.Objects.isNull;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Objects.isNull;
 
 
 /**
@@ -179,28 +179,26 @@ public class NLUServerClientAPIWrapper {
                 .asJson();
 
         if (response.isSuccess()) {
-            kong.unirest.json.JSONObject predictionResult = response.getBody().getObject();
-            JSONArray matchedUtterances = predictionResult.getJSONArray("matched_utterances");
-            JSONArray predictionValues = predictionResult.getJSONArray("prediction_values");
-            JSONArray intents = predictionResult.getJSONArray("intents");
-            JSONObject matchedParams = predictionResult.getJSONObject("matched_params");
-
+            kong.unirest.json.JSONObject predictionDTO = response.getBody().getObject();
+            JSONArray classificationsDTO = predictionDTO.getJSONArray("classifications");
 
             prediction = new Prediction();
 
-            for (int i = 0; i < predictionValues.length(); i++) {
+            for (int i = 0; i < classificationsDTO.length(); i++) {
+                JSONObject classificationDTO = classificationsDTO.getJSONObject(i);
                 Classification c = new Classification();
-                c.setIntent(this.bot.getIntent(intents.getString(i)));
-                c.setScore(predictionValues.getFloat(i));
-                c.setMatchedUtterance((matchedUtterances.getString(i)));
-                prediction.addClassification(c);
-            }
+                c.setIntent(this.bot.getIntent(classificationDTO.getString("intent")));
+                c.setScore(classificationDTO.getFloat("score"));
+                c.setMatchedUtterance(classificationDTO.getString("matched_utterance"));
 
-            Map<String, Object> mapParams = matchedParams.toMap();
-            //Iterate over the map and add the params to the prediction
-            for (Map.Entry<String, Object> entry : mapParams.entrySet()) {
-                MatchedParam p = new MatchedParam(entry.getKey(), entry.getValue().toString());
-                prediction.addMatchedParam(p);
+                JSONArray matchedParamsDTO = classificationDTO.getJSONArray("matched_params");
+                //Iterate over the map and add the params to the prediction
+                for (int j = 0; j < matchedParamsDTO.length(); j++) {
+                    JSONObject matchedParamDTO = matchedParamsDTO.getJSONObject(j);
+                    MatchedParam p = new MatchedParam(matchedParamDTO.getString("name"), matchedParamDTO.getString("value"));
+                    c.addMatchedParam(p);
+                }
+                prediction.addClassification(c);
             }
         } else {
             Log.warn("Error during bot prediction {0}", response.getStatusText() + response.getBody().toString());
@@ -215,7 +213,7 @@ public class NLUServerClientAPIWrapper {
         ArrayList<EntityTypeDTO> entities = new ArrayList<>();
     }
 
-    //We use a single class to represent all the possible entites, either custom or not
+    //We use a single class to represent all the possible entities, either custom or not
     private class EntityTypeDTO {
         String name;
         List<CustomEntityEntryDTO> entries = new ArrayList<>();
@@ -259,9 +257,9 @@ public class NLUServerClientAPIWrapper {
                             entryDTO.synonyms.addAll(entry.getSynonyms());
                             etDTO.entries.add(entryDTO);
                         }
-                        cDTO.entities.add(etDTO);
-                        mapEntityTypes.put(etDTO.name, etDTO);
                     }
+                    cDTO.entities.add(etDTO);
+                    mapEntityTypes.put(etDTO.name, etDTO);
                 }
             }
 

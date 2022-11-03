@@ -3,7 +3,6 @@ package com.xatkit.core.recognition.nluserver.mapper.dsl;
 import lombok.Data;
 
 @Data
-
 /**
  * Represents the type of a {@link EntityParameter}.
  */
