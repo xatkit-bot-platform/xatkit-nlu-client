@@ -83,6 +83,7 @@ public class NLUServerRecognizedIntentMapper {
             recognizedIntent.setDefinition(intentDefinition);
             recognizedIntent.setRecognitionConfidence(classification.getScore());
             recognizedIntent.setMatchedInput(classification.getMatchedUtterance());
+            recognizedIntent.getValues().addAll(this.mapParameterValues(intentDefinition, classification.getMatchedParams()));
             recognizedIntents.add(recognizedIntent);
         }
         return recognizedIntents;

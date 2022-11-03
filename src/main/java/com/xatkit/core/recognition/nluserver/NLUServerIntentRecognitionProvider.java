@@ -342,10 +342,6 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
                 List<RecognizedIntent> recognizedIntents =
                         nluServerRecognizedIntentMapper.mapRecognitionResult(prediction);
                 recognizedIntent = getBestCandidate(recognizedIntents, context);
-                // we add potential matched entities to the recognized intent
-                recognizedIntent.getValues().addAll(
-                        nluServerRecognizedIntentMapper.mapParameterValues(
-                        (IntentDefinition) recognizedIntent.getDefinition(), prediction.getMatchedParams()));
             }
 
             if (nonNull(recognitionMonitor)) {
