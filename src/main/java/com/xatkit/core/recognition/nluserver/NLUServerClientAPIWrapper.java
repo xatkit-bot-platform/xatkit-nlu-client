@@ -128,6 +128,8 @@ public class NLUServerClientAPIWrapper {
         configurationFields.put("embedding_dim", configuration.getEmbeddingDim());
         configurationFields.put("input_max_num_tokens", configuration.getMaxNumTokens());
         configurationFields.put("stemmer", configuration.isStemmer());
+        configurationFields.put("use_ner_in_prediction", configuration.isUseNerInPrediction());
+        configurationFields.put("get_incomplete_dates", configuration.isGetIncompleteDates());
 
         HttpResponse<JsonNode> response = Unirest.post("/bot/{botname}/train/")
                 .header("Content-Type", "application/json")
@@ -190,12 +192,13 @@ public class NLUServerClientAPIWrapper {
                 c.setIntent(this.bot.getIntent(classificationDTO.getString("intent")));
                 c.setScore(classificationDTO.getFloat("score"));
                 c.setMatchedUtterance(classificationDTO.getString("matched_utterance"));
-
                 JSONArray matchedParamsDTO = classificationDTO.getJSONArray("matched_params");
                 //Iterate over the map and add the params to the prediction
                 for (int j = 0; j < matchedParamsDTO.length(); j++) {
                     JSONObject matchedParamDTO = matchedParamsDTO.getJSONObject(j);
-                    MatchedParam p = new MatchedParam(matchedParamDTO.getString("name"), matchedParamDTO.getString("value"));
+                    MatchedParam p = new MatchedParam(matchedParamDTO.getString("name"),
+                            matchedParamDTO.optString("value", ""),
+                            matchedParamDTO.optJSONObject("info").toMap());
                     c.addMatchedParam(p);
                 }
                 prediction.addClassification(c);

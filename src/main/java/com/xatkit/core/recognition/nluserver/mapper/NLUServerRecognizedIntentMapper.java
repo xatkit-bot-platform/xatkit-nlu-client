@@ -16,6 +16,7 @@ import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.xatkit.core.recognition.IntentRecognitionProvider.DEFAULT_FALLBACK_INTENT;
@@ -114,6 +115,7 @@ public class NLUServerRecognizedIntentMapper {
         for (MatchedParam matchedParam : matchedParams) {
             String paramName = matchedParam.getParamName();
             String paramValue = matchedParam.getValue();
+            Map<String, Object> paramInfo = matchedParam.getInfo();
             //We get the contextParameter object with our param name
             ContextParameter contextParameter = intentDefinition.getParameter(paramName);
             if (nonNull(contextParameter)) {
@@ -122,6 +124,7 @@ public class NLUServerRecognizedIntentMapper {
                         IntentFactory.eINSTANCE.createContextParameterValue();
                 contextParameterValue.setContextParameter(contextParameter);
                 contextParameterValue.setValue(paramValue);
+                contextParameterValue.setInfo(paramInfo);
                 contextParameterValues.add(contextParameterValue);
             }
         }
