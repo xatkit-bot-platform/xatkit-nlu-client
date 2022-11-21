@@ -128,6 +128,8 @@ public class NLUServerClientAPIWrapper {
         configurationFields.put("embedding_dim", configuration.getEmbeddingDim());
         configurationFields.put("input_max_num_tokens", configuration.getMaxNumTokens());
         configurationFields.put("stemmer", configuration.isStemmer());
+        configurationFields.put("use_ner_in_prediction", configuration.isUseNerInPrediction());
+        configurationFields.put("get_incomplete_dates", configuration.isGetIncompleteDates());
 
         HttpResponse<JsonNode> response = Unirest.post("/bot/{botname}/train/")
                 .header("Content-Type", "application/json")

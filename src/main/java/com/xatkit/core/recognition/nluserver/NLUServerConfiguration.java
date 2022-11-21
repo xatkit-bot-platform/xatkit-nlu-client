@@ -96,10 +96,9 @@ public class NLUServerConfiguration {
     public static final String STEMMER = "xatkit.nluserver.stemmer";
 
     /**
-     * Whether to use a stemmer
+     * The url of the Xatkit NLU Server
      */
     public static final String URL = "xatkit.nluserver.url";
-
 
     /**
      * The {@link Configuration} key to store the confidence threshold.
@@ -108,6 +107,16 @@ public class NLUServerConfiguration {
      * 0} (accept all intents).
      */
     public static final String CONFIDENCE_THRESHOLD_KEY = "xatkit.nluserver.confidence.threshold";
+
+    /**
+     * Whether to run Named Entity Recognition in the intent recognition process.
+     */
+    public static final String USE_NER_IN_PREDICTION = "xatkit.nluserver.ner.use_ner_in_prediction";
+
+    /**
+     * Whether to get information about the missing parts of date-time entities in the NER process.
+     */
+    public static final String GET_INCOMPLETE_DATES = "xatkit.nluserver.ner.get_incomplete_dates";
 
     /**
      * The base {@link Configuration} used to initialized the {@link NLUServerConfiguration}.
@@ -180,6 +189,16 @@ public class NLUServerConfiguration {
     private boolean stemmer;
 
     /**
+     * @see #USE_NER_IN_PREDICTION
+     */
+    private boolean useNerInPrediction;
+
+    /**
+     * @see #GET_INCOMPLETE_DATES
+     */
+    private boolean getIncompleteDates;
+
+    /**
      * @see #CONFIDENCE_THRESHOLD_KEY
      */
      private float confidenceThreshold;
@@ -233,6 +252,8 @@ public class NLUServerConfiguration {
         this.oovToken = baseConfiguration.getString(OOV_TOKEN,"<OOV>");
         this.numEpochs = baseConfiguration.getInt(NUM_EPOCHS, 300);
         this.numWords = baseConfiguration.getInt(NUM_WORDS, 1000);
+        this.useNerInPrediction = baseConfiguration.getBoolean(USE_NER_IN_PREDICTION, true);
+        this.getIncompleteDates = baseConfiguration.getBoolean(GET_INCOMPLETE_DATES, true);
 
     }
 
