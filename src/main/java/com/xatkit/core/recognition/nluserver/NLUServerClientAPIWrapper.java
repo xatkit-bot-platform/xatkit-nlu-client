@@ -192,12 +192,13 @@ public class NLUServerClientAPIWrapper {
                 c.setIntent(this.bot.getIntent(classificationDTO.getString("intent")));
                 c.setScore(classificationDTO.getFloat("score"));
                 c.setMatchedUtterance(classificationDTO.getString("matched_utterance"));
-
                 JSONArray matchedParamsDTO = classificationDTO.getJSONArray("matched_params");
                 //Iterate over the map and add the params to the prediction
                 for (int j = 0; j < matchedParamsDTO.length(); j++) {
                     JSONObject matchedParamDTO = matchedParamsDTO.getJSONObject(j);
-                    MatchedParam p = new MatchedParam(matchedParamDTO.getString("name"), matchedParamDTO.getString("value"));
+                    MatchedParam p = new MatchedParam(matchedParamDTO.getString("name"),
+                            matchedParamDTO.optString("value", ""),
+                            matchedParamDTO.optJSONObject("info").toMap());
                     c.addMatchedParam(p);
                 }
                 prediction.addClassification(c);
