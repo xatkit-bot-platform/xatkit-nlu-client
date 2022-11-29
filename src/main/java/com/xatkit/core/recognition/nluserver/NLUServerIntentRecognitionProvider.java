@@ -8,15 +8,16 @@ import com.xatkit.core.recognition.RecognitionMonitor;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityMapper;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerEntityReferenceMapper;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerIntentMapper;
-import com.xatkit.core.recognition.nluserver.mapper.NLUServerStateMapper;
 import com.xatkit.core.recognition.nluserver.mapper.NLUServerRecognizedIntentMapper;
+import com.xatkit.core.recognition.nluserver.mapper.NLUServerStateMapper;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.BotData;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Classification;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityParameter;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.IntentReference;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.NLUContext;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
 import com.xatkit.execution.ExecutionFactory;
 import com.xatkit.execution.State;
 import com.xatkit.execution.StateContext;
@@ -289,21 +290,19 @@ public class NLUServerIntentRecognitionProvider extends AbstractIntentRecognitio
 
     /**
      * We link the states ({@link NLUContext}) with the {@link Intent}s accessible from them based on the previous
-     * registered names
-     *
-     * We also direclty reference the EntityTypes from the context (as needed by the NLUServer)
-     * and
+     * registered names.
+     * <p>
+     * We also link {@link Intent}s with their parameters ({@link EntityType})
      */
     private void prepareTrainingData() {
-        for (NLUContext c: bot.getNluContexts()) {
-            for (String i: c.getIntentNames()) {
-                c.addIntent(bot.getIntent(i));
+        for (Intent i: bot.getIntents()) {
+            for (EntityParameter p: i.getParameters()) {
+                p.setType(bot.getEntityType(p.getTypeName()));
             }
-            for (Intent i: c.getIntents()) {
-                for (EntityParameter p: i.getParameters()) {
-                    p.setType(bot.getEntityType(p.getTypeName()));
-                    c.addEntityType(p.getType());
-                }
+        }
+        for (NLUContext c : bot.getNluContexts()) {
+            for (IntentReference r : c.getIntentReferences()) {
+                r.setIntent(bot.getIntent(r.getName()));
             }
         }
     }

@@ -8,6 +8,7 @@ import com.xatkit.core.recognition.nluserver.mapper.dsl.CustomEntityTypeEntry;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityParameter;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.EntityType;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.IntentReference;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.MatchedParam;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.NLUContext;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Prediction;
@@ -85,14 +86,13 @@ public class NLUServerClientAPIWrapper {
         if (response.getStatus() == 200) {
             this.bot.setUUID(response.getBody().getObject().get("uuid").toString());
             try {
-
-
                 Map<String, Object> initializationFields = new HashMap<>();
-                ArrayList<NLUContextDTO> nluContextDTOs = botToContextList();
+                BotDTO botDTO = new BotDTO(bot);
 
-                initializationFields.put("name", bot.getBotName());
-                initializationFields.put("contexts", nluContextDTOs);
-
+                initializationFields.put("name", botDTO.name);
+                initializationFields.put("contexts", botDTO.contexts);
+                initializationFields.put("entities", botDTO.entities);
+                initializationFields.put("intents", botDTO.intents);
 
                 HttpResponse<JsonNode> responseInitialization = Unirest.post("/bot/{botname}/initialize/")
                         .header("Content-Type", "application/json")
@@ -209,28 +209,15 @@ public class NLUServerClientAPIWrapper {
         return prediction;
     }
 
-    private class NLUContextDTO {
-        String name;
-        ArrayList<IntentDTO> intents = new ArrayList<>();
-        //name syntax to map the  Python names in the server
-        ArrayList<EntityTypeDTO> entities = new ArrayList<>();
+    private class CustomEntityEntryDTO {
+        String value;
+        List<String> synonyms = new ArrayList<>();
     }
 
-    //We use a single class to represent all the possible entities, either custom or not
     private class EntityTypeDTO {
         String name;
         List<CustomEntityEntryDTO> entries = new ArrayList<>();
-    }
-
-    private class CustomEntityEntryDTO {
-        String value;
-        ArrayList<String> synonyms = new ArrayList<>();
-    }
-
-    private class IntentDTO {
-        String name;
-        List<String> training_sentences = new ArrayList<>();
-        List<EntityReferenceDTO> entity_parameters = new ArrayList<>();
+        //We use a single class to represent all the possible entities, either custom or not
     }
 
     private class EntityReferenceDTO {
@@ -239,51 +226,74 @@ public class NLUServerClientAPIWrapper {
         EntityTypeDTO entity;
     }
 
-    private ArrayList<NLUContextDTO> botToContextList() {
-
-        Map<String, EntityTypeDTO> mapEntityTypes = new HashMap<>();
-        ArrayList<NLUContextDTO> nluContextDTOs = new ArrayList<>();
-
-        for (NLUContext c: bot.getNluContexts()) {
-            NLUContextDTO cDTO = new NLUContextDTO();
-            cDTO.name = c.getName();
-
-            if (c.getEntities() != null) {
-
-                for (EntityType e : c.getEntities()) {
-                    EntityTypeDTO etDTO = new EntityTypeDTO();
-                    etDTO.name = e.getName();
-                    if (e instanceof CustomEntityType) {
-                        for (CustomEntityTypeEntry entry : ((CustomEntityType) e).getEntries()) {
-                            CustomEntityEntryDTO entryDTO = new CustomEntityEntryDTO();
-                            entryDTO.value = entry.getValue();
-                            entryDTO.synonyms.addAll(entry.getSynonyms());
-                            etDTO.entries.add(entryDTO);
-                        }
-                    }
-                    cDTO.entities.add(etDTO);
-                    mapEntityTypes.put(etDTO.name, etDTO);
-                }
-            }
-
-            for (Intent i: c.getIntents()) {
-                IntentDTO iDTO = new IntentDTO();
-                iDTO.name = i.getName();
-                iDTO.training_sentences = i.getTrainingSentences();
-                cDTO.intents.add(iDTO);
-                for (EntityParameter er: i.getParameters()) {
-                    EntityReferenceDTO erDTO = new EntityReferenceDTO();
-                    erDTO.fragment = er.getFragment();
-                    erDTO.name = er.getName();
-                    erDTO.entity = mapEntityTypes.get(er.getType().getName());
-                    iDTO.entity_parameters.add(erDTO);
-                }
-            }
-
-            nluContextDTOs.add(cDTO);
-        }
-        return nluContextDTOs;
+    private class IntentDTO {
+        String name;
+        List<String> training_sentences = new ArrayList<>();
+        List<EntityReferenceDTO> entity_parameters = new ArrayList<>();
     }
 
+    private class IntentReferenceDTO {
+        String name;
+        IntentDTO intent;
+    }
 
+    private class NLUContextDTO {
+        String name;
+        List<IntentReferenceDTO> intent_refs = new ArrayList<>();
+    }
+
+    private class BotDTO {
+        String name;
+        List<NLUContextDTO> contexts = new ArrayList<>();
+        List<EntityTypeDTO> entities = new ArrayList<>();
+        List<IntentDTO> intents = new ArrayList<>();
+
+        BotDTO (BotData bot) {
+            Map<String, EntityTypeDTO> mapEntityTypes = new HashMap<>();
+            Map<String, IntentDTO> mapIntents = new HashMap<>();
+
+            this.name = bot.getBotName();
+            for (EntityType e : bot.getEntities()) {
+                EntityTypeDTO eDTO = new EntityTypeDTO();
+                eDTO.name = e.getName();
+                if (e instanceof CustomEntityType) {
+                    for (CustomEntityTypeEntry entry : ((CustomEntityType) e).getEntries()) {
+                        CustomEntityEntryDTO entryDTO = new CustomEntityEntryDTO();
+                        entryDTO.value = entry.getValue();
+                        entryDTO.synonyms.addAll(entry.getSynonyms());
+                        eDTO.entries.add(entryDTO);
+                    }
+                }
+                this.entities.add(eDTO);
+                mapEntityTypes.put(eDTO.name, eDTO);
+            }
+
+            for (Intent i : bot.getIntents()) {
+                IntentDTO intentDTO = new IntentDTO();
+                intentDTO.name = i.getName();
+                intentDTO.training_sentences.addAll(i.getTrainingSentences());
+                for (EntityParameter ep : i.getParameters()) {
+                    EntityReferenceDTO erDTO = new EntityReferenceDTO();
+                    erDTO.name = ep.getName();
+                    erDTO.fragment = ep.getFragment();
+                    erDTO.entity = mapEntityTypes.get(ep.getType().getName());
+                    intentDTO.entity_parameters.add(erDTO);
+                }
+                this.intents.add(intentDTO);
+                mapIntents.put(intentDTO.name, intentDTO);
+            }
+
+            for (NLUContext c : bot.getNluContexts()) {
+                NLUContextDTO cDTO = new NLUContextDTO();
+                cDTO.name = c.getName();
+                for (IntentReference ir : c.getIntentReferences()) {
+                    IntentReferenceDTO irDTO = new IntentReferenceDTO();
+                    irDTO.name = ir.getName();
+                    irDTO.intent = mapIntents.get(ir.getName());
+                    cDTO.intent_refs.add(irDTO);
+                }
+                this.contexts.add(cDTO);
+            }
+        }
+    }
 }

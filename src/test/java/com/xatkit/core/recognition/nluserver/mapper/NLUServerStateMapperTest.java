@@ -2,12 +2,11 @@ package com.xatkit.core.recognition.nluserver.mapper;
 
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
-import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.IntentReference;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.NLUContext;
 import com.xatkit.core.recognition.nluserver.utils.FakeState;
 import com.xatkit.dsl.DSL;
 import com.xatkit.execution.State;
-import com.xatkit.execution.impl.StateImpl;
 import com.xatkit.intent.IntentDefinition;
 import com.xatkit.test.bot.IntentProviderTestBot;
 import org.apache.commons.configuration2.BaseConfiguration;
@@ -16,7 +15,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,17 +65,17 @@ public class NLUServerStateMapperTest {
     private void assertCorrectMappingForState(State state, NLUContext nluContext) {
         assertThat(nluContext).isNotNull();
         assertThat(nluContext.getName()).isEqualTo(state.getName());
-        assertThat(nluContext.getIntentNames()).isNotEmpty();
+        assertThat(nluContext.getIntentReferences()).isNotEmpty();
         for (IntentDefinition intentDefinition : state.getAllAccessedIntents()) {
-            assertNLUContextHasIntentDefinition(nluContext, intentDefinition);
+            assertNLUContextHasIntentReference(nluContext, intentDefinition);
         }
     }
 
 
-    private void assertNLUContextHasIntentDefinition(NLUContext context, IntentDefinition intentDefinition) {
+    private void assertNLUContextHasIntentReference(NLUContext context, IntentDefinition intentDefinition) {
         boolean found = false;
-        for (String intentName : context.getIntentNames()) {
-            if (intentName.equals(intentDefinition.getName())) {
+        for (IntentReference intentRef : context.getIntentReferences()) {
+            if (intentRef.getName().equals(intentDefinition.getName())) {
                 found = true;
             }
         }

@@ -3,11 +3,14 @@ package com.xatkit.core.recognition.nluserver.mapper;
 import com.xatkit.core.recognition.IntentRecognitionProviderException;
 import com.xatkit.core.recognition.nluserver.NLUServerConfiguration;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.Intent;
+import com.xatkit.core.recognition.nluserver.mapper.dsl.IntentReference;
 import com.xatkit.core.recognition.nluserver.mapper.dsl.NLUContext;
+import com.xatkit.execution.State;
 import com.xatkit.intent.EventDefinition;
 import com.xatkit.intent.IntentDefinition;
-import com.xatkit.execution.State;
 import lombok.NonNull;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,7 +59,8 @@ public class NLUServerStateMapper {
                 State.class.getSimpleName(), state.getName());
         NLUContext nluContext = new NLUContext(adaptStateDefinitionNameToNLUServer(state.getName()));
 
-        nluContext.addIntentNames(getLinkedIntentNames(state.getAllAccessedIntents()));
+        List<IntentReference> intentRefs = createIntentReferences(state);
+        nluContext.addAllIntentReferences(intentRefs);
 
         return nluContext;
     }
@@ -82,6 +86,27 @@ public class NLUServerStateMapper {
      */
     private List<String> getLinkedIntentNames(@NonNull Collection<IntentDefinition> linkedIntents) {
        return (linkedIntents.stream().map(EventDefinition::getName).collect(Collectors.toList()));
+    }
+
+    /**
+     * Creates the {@link NLUContext} {@link IntentReference}s  from the provided Xatkit {@code state}.
+     * <p>
+     * @param state the {@link State} to create intent references from
+     * @return the {@link List} of intent references
+     * @throws NullPointerException if one of the {@code IntentDefinition} of the provided {@code state} is null
+     */
+    private List<IntentReference> createIntentReferences(@NonNull State state) {
+        List<IntentReference> results = new ArrayList<>();
+        for (IntentDefinition intentDefinition : state.getAllAccessedIntents()) {
+            checkNotNull(intentDefinition.getName(), "Cannot create the %s from the provided %s %s, the name %s is "
+                            + "invalid", IntentReference.class.getSimpleName(), IntentDefinition.class.getSimpleName(),
+                    intentDefinition, intentDefinition.getName());
+
+            IntentReference intentReference = new IntentReference(intentDefinition.getName());
+            results.add(intentReference);
+        }
+
+        return results;
     }
 
 

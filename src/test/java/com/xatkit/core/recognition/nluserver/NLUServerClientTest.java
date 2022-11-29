@@ -99,10 +99,10 @@ public class NLUServerClientTest {
                 "You really love my dog");
         Intent i2 = new Intent("intent2Ccontext1");
         i2.addTrainingSentence("Hello"); i2.addTrainingSentence("Hi");
-        context1.addIntent(i1); context1.addIntent(i2);
+        context1.addIntentReference(i1); context1.addIntentReference(i2);
         Intent i3 = new Intent("intent1Context2");
         i3.addTrainingSentence("Yes");i3.addTrainingSentence("Absolutely");i3.addTrainingSentence("Yes!");
-        context2.addIntent(i3);
+        context2.addIntentReference(i3);
         botData.addNLUContext(context1);
         botData.addNLUContext(context2);
         botData.addIntent(i1);
