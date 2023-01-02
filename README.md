@@ -53,22 +53,16 @@ The semantics of these mandatory options are:
 
 
 # Additional configuration options
-All the [NLU Configuration options](https://github.com/xatkit-bot-platform/xatkit-nlu-server) available in the 
-server description are mirrored in the client (and passed on to the server during the training), with a similar name.
+All the
+[NLU Configuration options](https://github.com/xatkit-bot-platform/xatkit-nlu-client#additional-configuration-options)
+available in the server description are mirrored in the client (and passed on to the server during the training), 
+with a similar name.
 
+Additionally, these are the client-specific configuration options you can set in your bot.
 
-| Key                   | Values  | Description                                                                                                                                      | Constraint                |
-|-----------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------|
-| `languageCode`        | String  | The country language used by the bot                                                                                                             | Optional (default `en`)   |
-| `langaugeRegionCode`  | String  | The region code used by the bot                                                                                                                  | Optional (default `US`)   |
-| `numWords`            | int     | Max number of words to keep track of in the word index                                                                                           | Optional (default `1000`) |
-| `lower`               | Boolean | Whether all strings whould be transformed to lowercase                                                                                           | Optional (default `true`) |
-| `oovToken`            | String  | Token to represent out of vocabulaty words during prediction                                                                                     | Optional (default `<OOV>`) |
-| `embeddingDim`        | int     | Number of dimensions to be sued during the embedding of word tokens                                                                              | Optional (default `128`)  |
-| `stemmer`             | Boolean | Whether to use a Stemmer as part of the training sentences (and user utterances) processing                                                      | Optional (default `True`) |
-| `maxNumTokens`        | int     | Max length (in terms of number of tokens) to keep for all sentences                                                                              | Optional (default `30`)   |
+| Key                   | Values  | Description                                             | Constraint                |
+|-----------------------|---------|---------------------------------------------------------|---------------------------|
 | `confidenceThreshold` | float   | Minimum confidence level to accept an intent is a match | Optional (default `0.3`)  |
-| `numEpochs`           | int     | Number of epochs to run during training                                                                                                          | Optional (default `300`)  |
 
 # Example
 

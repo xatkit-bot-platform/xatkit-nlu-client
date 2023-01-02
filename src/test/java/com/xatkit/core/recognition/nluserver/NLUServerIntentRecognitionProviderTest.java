@@ -31,7 +31,7 @@ public class NLUServerIntentRecognitionProviderTest extends IntentRecognitionPro
     public static Configuration buildConfiguration() {
         return buildConfiguration(VariableLoaderHelper.getVariable(NLUServerConfiguration.BOT_NAME),
                 VariableLoaderHelper
-                .getVariable(NLUServerConfiguration.LANGUAGE_CODE_KEY));
+                .getVariable(NLUServerConfiguration.LANGUAGE_CODE));
     }
 
     private static Configuration buildConfiguration(String botName, String languageCode) {
@@ -39,7 +39,7 @@ public class NLUServerIntentRecognitionProviderTest extends IntentRecognitionPro
         configuration.addProperty(IntentRecognitionProviderFactory.INTENT_PROVIDER_KEY,
                 NLUServerConfiguration.NLUSERVER_INTENT_PROVIDER);
         configuration.addProperty(NLUServerConfiguration.BOT_NAME, botName);
-        configuration.addProperty(NLUServerConfiguration.LANGUAGE_CODE_KEY, languageCode);
+        configuration.addProperty(NLUServerConfiguration.LANGUAGE_CODE, languageCode);
         configuration.addProperty(NLUServerConfiguration.URL , VariableLoaderHelper
                 .getVariable(NLUServerConfiguration.URL));
         return configuration;

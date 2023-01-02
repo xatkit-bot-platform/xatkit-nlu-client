@@ -19,6 +19,12 @@ import static fr.inria.atlanmod.commons.Preconditions.checkArgument;
 @Value
 public class NLUServerConfiguration {
 
+
+    /**
+     * The base {@link Configuration} used to initialize the {@link NLUServerConfiguration}.
+     */
+    private Configuration baseConfiguration;
+
     /**
      * The {@link Configuration} value to set to specify that your bot is using NLUServerFlow.
      * <p>
@@ -33,32 +39,39 @@ public class NLUServerConfiguration {
     public static final String BOT_NAME = "xatkit.nluserver.botname";
 
     /**
-     * The {@link Configuration} key to store the code of the language processed by NLUServer.
-     */
-    public static final String LANGUAGE_CODE_KEY = "xatkit.nluserver.language";
-
-    /**
-     * The {@link Configuration} key to store the code of the language processed by NLUServer.
-     */
-    public static final String LANGUAGE_REGION_CODE_KEY = "xatkit.nluserver.language.region";
-
-    /**
-     * The default language processed by the NLU Server.
-     */
-    public static final String DEFAULT_LANGUAGE_CODE = "en";
-
-    /**
-     * The default language region code processed by the NLU Server.
-     */
-    public static final String DEFAULT_LANGUAGE_REGION_CODE = "";
-
-    /**
      * Overwrite an existing bot with the same name if found
      * This is useful in development but dangerous in production as you can easily make a mistake and
      * kill a deployed bot
      */
     public static final String FORCE_OVERWRITE = "xatkit.nluserver.force_overwrite";
 
+    /**
+     * The {@link Configuration} key to store the confidence threshold.
+     * <p>
+     * This threshold is used to accept/reject a matched intent based on its confidence. The default value is {@code
+     * 0} (accept all intents).
+     */
+    public static final String CONFIDENCE_THRESHOLD = "xatkit.nluserver.confidence.threshold";
+
+    /**
+     * The url of the Xatkit NLU Server
+     */
+    public static final String URL = "xatkit.nluserver.url";
+
+    /**
+     * The {@link Configuration} key to store the code of the language processed by NLUServer.
+     */
+    public static final String LANGUAGE_CODE = "xatkit.nluserver.language";
+
+    /**
+     * The {@link Configuration} key to store the code of the language processed by NLUServer.
+     */
+    public static final String LANGUAGE_REGION_CODE = "xatkit.nluserver.language.region";
+
+    /**
+     * The {@link Configuration} key to store the timezone processed by NLUServer.
+     */
+    public static final String TIMEZONE = "xatkit.nluserver.timezone";
 
     /**
      * Max num of words to keep in the bot vocabulary
@@ -88,7 +101,7 @@ public class NLUServerConfiguration {
     /**
      * Max length (in num tokens) of the sentences
      */
-    public static final String MAX_NUM_TOKENS = "xatkit.nluserver.max_num_tokens";
+    public static final String INPUT_MAX_NUM_TOKENS = "xatkit.nluserver.input_max_num_tokens";
 
     /**
      * Whether to use a stemmer
@@ -96,17 +109,14 @@ public class NLUServerConfiguration {
     public static final String STEMMER = "xatkit.nluserver.stemmer";
 
     /**
-     * The url of the Xatkit NLU Server
+     * Whether to automatically assign zero probabilities to sentences with all tokens being oov ones
      */
-    public static final String URL = "xatkit.nluserver.url";
+    public static final String DISCARD_OOV_SENTENCES = "xatkit.nluserver.discard_oov_sentences";
 
     /**
-     * The {@link Configuration} key to store the confidence threshold.
-     * <p>
-     * This threshold is used to accept/reject a matched intent based on its confidence. The default value is {@code
-     * 0} (accept all intents).
+     * Whether to check for exact match between the sentence to predict and one of the training sentences
      */
-    public static final String CONFIDENCE_THRESHOLD_KEY = "xatkit.nluserver.confidence.threshold";
+    public static final String CHECK_EXACT_PREDICTION_MATCH = "xatkit.nluserver.check_exact_prediction_match";
 
     /**
      * Whether to run Named Entity Recognition in the intent recognition process.
@@ -114,14 +124,14 @@ public class NLUServerConfiguration {
     public static final String USE_NER_IN_PREDICTION = "xatkit.nluserver.ner.use_ner_in_prediction";
 
     /**
-     * Whether to get information about the missing parts of date-time entities in the NER process.
+     * The activation function of the last layer
      */
-    public static final String GET_INCOMPLETE_DATES = "xatkit.nluserver.ner.get_incomplete_dates";
+    public static final String ACTIVATION_LAST_LAYER = "xatkit.nluserver.activation_last_layer";
 
     /**
-     * The base {@link Configuration} used to initialized the {@link NLUServerConfiguration}.
+     * The activation function of the hidden layers
      */
-    private Configuration baseConfiguration;
+    public static final String ACTIVATION_HIDDEN_LAYERS = "xatkit.nluserver.activation_hidden_layers";
 
     /**
      * The unique identifier of the NLUServer project.
@@ -131,25 +141,42 @@ public class NLUServerConfiguration {
     private String botName;
 
     /**
+     * The flag to easily retrain deployed bots.
+     *
+     * @see #FORCE_OVERWRITE
+     */
+    private boolean forceOverwrite;
+
+    /**
+     * @see #CONFIDENCE_THRESHOLD
+     */
+    private float confidenceThreshold;
+
+    /**
+     * @see #URL
+     */
+    private String url;
+
+    /**
      * The language code of the Xatkit NLUServer project.
      *
-     * @see #LANGUAGE_CODE_KEY
+     * @see #LANGUAGE_CODE
      */
     private String languageCode;
 
     /**
      * The language region code of the Xatkit NLUServer project.
      *
-     * @see #LANGUAGE_CODE_KEY
+     * @see #LANGUAGE_CODE
      */
     private String languageRegionCode;
 
     /**
-     * The flag to easily retrain deployed bots.
+     * The timezone of the Xatkit NLUServer project.
      *
-     * @see #FORCE_OVERWRITE
+     * @see #TIMEZONE
      */
-    private boolean forceOverwrite;
+    private String timezone;
 
     /**
      * Max number of words to keep in the vocabulary.
@@ -164,14 +191,14 @@ public class NLUServerConfiguration {
     private boolean lower;
 
     /**
-     * @see #NUM_EPOCHS
-     */
-    private int numEpochs;
-
-    /**
      * @see #LOWERCASE
      */
     private String oovToken;
+
+    /**
+     * @see #NUM_EPOCHS
+     */
+    private int numEpochs;
 
     /**
      * @see #EMBEDDING_DIM
@@ -179,9 +206,9 @@ public class NLUServerConfiguration {
     private int embeddingDim;
 
     /**
-     * @see #MAX_NUM_TOKENS
+     * @see #INPUT_MAX_NUM_TOKENS
      */
-    private int maxNumTokens;
+    private int inputMaxNumTokens;
 
     /**
      * @see #STEMMER
@@ -189,26 +216,39 @@ public class NLUServerConfiguration {
     private boolean stemmer;
 
     /**
+     * @see #DISCARD_OOV_SENTENCES
+     */
+    private boolean discardOovSentences;
+
+    /**
+     * @see #CHECK_EXACT_PREDICTION_MATCH
+     */
+    private boolean checkExactPredictionMatch;
+
+    /**
      * @see #USE_NER_IN_PREDICTION
      */
     private boolean useNerInPrediction;
 
     /**
-     * @see #GET_INCOMPLETE_DATES
+     * @see #ACTIVATION_LAST_LAYER
      */
-    private boolean getIncompleteDates;
+    private String activationLastLayer;
 
     /**
-     * @see #CONFIDENCE_THRESHOLD_KEY
+     * @see #ACTIVATION_HIDDEN_LAYERS
      */
-     private float confidenceThreshold;
+    private String activationHiddenLayers;
 
     /**
-     * @see #URL
+     * The default language processed by the NLU Server.
      */
-     private String url;
+    public static final String DEFAULT_LANGUAGE_CODE = "en";
 
-
+    /**
+     * The default language region code processed by the NLU Server.
+     */
+    public static final String DEFAULT_LANGUAGE_REGION_CODE = "";
 
     /**
      * Initializes the {@link NLUServerConfiguration} with the provided {@code baseConfiguration}.
@@ -226,34 +266,37 @@ public class NLUServerConfiguration {
                 + "the mandatory property %s", Configuration.class.getSimpleName(), URL);
 
         this.botName = baseConfiguration.getString(BOT_NAME);
+        this.forceOverwrite = baseConfiguration.getBoolean(FORCE_OVERWRITE, false);
+        this.confidenceThreshold = baseConfiguration.getFloat(CONFIDENCE_THRESHOLD, 0.3f);
         this.url = baseConfiguration.getString(URL);
 
-        if (baseConfiguration.containsKey(LANGUAGE_CODE_KEY)) {
-            languageCode = baseConfiguration.getString(LANGUAGE_CODE_KEY);
+        if (baseConfiguration.containsKey(LANGUAGE_CODE)) {
+            languageCode = baseConfiguration.getString(LANGUAGE_CODE);
         } else {
             Log.warn("No language code provided, using the default one ({0})", DEFAULT_LANGUAGE_CODE);
             languageCode = DEFAULT_LANGUAGE_CODE;
         }
 
-        if (baseConfiguration.containsKey(LANGUAGE_REGION_CODE_KEY)) {
-            languageRegionCode = baseConfiguration.getString(LANGUAGE_REGION_CODE_KEY);
+        if (baseConfiguration.containsKey(LANGUAGE_REGION_CODE)) {
+            languageRegionCode = baseConfiguration.getString(LANGUAGE_REGION_CODE);
         } else {
             Log.warn("No language region code provided, using the default one ({0})", DEFAULT_LANGUAGE_REGION_CODE);
             languageRegionCode = DEFAULT_LANGUAGE_REGION_CODE;
         }
 
-
-        this.forceOverwrite = baseConfiguration.getBoolean(FORCE_OVERWRITE, false);
-        this.confidenceThreshold = baseConfiguration.getFloat(CONFIDENCE_THRESHOLD_KEY, 0.3f);
-        this.maxNumTokens = baseConfiguration.getInt(MAX_NUM_TOKENS, 30);
-        this.stemmer = baseConfiguration.getBoolean(STEMMER, true);
-        this.embeddingDim = baseConfiguration.getInt(EMBEDDING_DIM, 16);
+        this.timezone = baseConfiguration.getString(TIMEZONE, "Europe/Madrid");
+        this.numWords = baseConfiguration.getInt(NUM_WORDS, 1000);
         this.lower = baseConfiguration.getBoolean(LOWERCASE, true);
         this.oovToken = baseConfiguration.getString(OOV_TOKEN,"<OOV>");
         this.numEpochs = baseConfiguration.getInt(NUM_EPOCHS, 300);
-        this.numWords = baseConfiguration.getInt(NUM_WORDS, 1000);
+        this.embeddingDim = baseConfiguration.getInt(EMBEDDING_DIM, 16);
+        this.inputMaxNumTokens = baseConfiguration.getInt(INPUT_MAX_NUM_TOKENS, 30);
+        this.stemmer = baseConfiguration.getBoolean(STEMMER, true);
+        this.discardOovSentences = baseConfiguration.getBoolean(DISCARD_OOV_SENTENCES, true);
+        this.checkExactPredictionMatch  = baseConfiguration.getBoolean(CHECK_EXACT_PREDICTION_MATCH, true);
         this.useNerInPrediction = baseConfiguration.getBoolean(USE_NER_IN_PREDICTION, true);
-        this.getIncompleteDates = baseConfiguration.getBoolean(GET_INCOMPLETE_DATES, true);
+        this.activationLastLayer = baseConfiguration.getString(ACTIVATION_LAST_LAYER, "sigmoid");
+        this.activationHiddenLayers = baseConfiguration.getString(ACTIVATION_HIDDEN_LAYERS, "tanh");
 
     }
 

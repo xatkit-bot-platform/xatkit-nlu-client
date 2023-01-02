@@ -65,7 +65,7 @@ public class NLUServerConfigurationTest {
 
     @Test
     public void constructWithLanguageCode() {
-        baseConfiguration.addProperty(NLUServerConfiguration.LANGUAGE_CODE_KEY, "LANGUAGE");
+        baseConfiguration.addProperty(NLUServerConfiguration.LANGUAGE_CODE, "LANGUAGE");
         configuration = new NLUServerConfiguration(baseConfiguration);
         assertThat(configuration.getLanguageCode()).isEqualTo("LANGUAGE");
     }
@@ -78,7 +78,7 @@ public class NLUServerConfigurationTest {
 
     @Test
     public void constructWithConfidenceThreshold() {
-        baseConfiguration.addProperty(NLUServerConfiguration.CONFIDENCE_THRESHOLD_KEY, 10.3f);
+        baseConfiguration.addProperty(NLUServerConfiguration.CONFIDENCE_THRESHOLD, 10.3f);
         configuration = new NLUServerConfiguration(baseConfiguration);
         assertThat(configuration.getConfidenceThreshold()).isEqualTo(10.3f);
     }

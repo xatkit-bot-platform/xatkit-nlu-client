@@ -121,15 +121,20 @@ public class NLUServerClientAPIWrapper {
         boolean isTrained = false;
         Map<String, Object> configurationFields = new HashMap<>();
         configurationFields.put("country", configuration.getLanguageCode());
+        configurationFields.put("region", configuration.getLanguageRegionCode());
+        configurationFields.put("timezone", configuration.getTimezone());
         configurationFields.put("num_words", configuration.getNumWords());
         configurationFields.put("lower", configuration.isLower());
         configurationFields.put("oov_token", configuration.getOovToken());
         configurationFields.put("num_epochs", configuration.getNumEpochs());
         configurationFields.put("embedding_dim", configuration.getEmbeddingDim());
-        configurationFields.put("input_max_num_tokens", configuration.getMaxNumTokens());
+        configurationFields.put("input_max_num_tokens", configuration.getInputMaxNumTokens());
         configurationFields.put("stemmer", configuration.isStemmer());
+        configurationFields.put("discard_oov_sentences", configuration.isDiscardOovSentences());
+        configurationFields.put("check_exact_prediction_match", configuration.isCheckExactPredictionMatch());
         configurationFields.put("use_ner_in_prediction", configuration.isUseNerInPrediction());
-        configurationFields.put("get_incomplete_dates", configuration.isGetIncompleteDates());
+        configurationFields.put("activation_last_layer", configuration.getActivationLastLayer());
+        configurationFields.put("activation_hidden_layers", configuration.getActivationHiddenLayers());
 
         HttpResponse<JsonNode> response = Unirest.post("/bot/{botname}/train/")
                 .header("Content-Type", "application/json")
