@@ -197,7 +197,7 @@ public class NLUServerClientAPIWrapper {
                 c.setIntent(this.bot.getIntent(classificationDTO.getString("intent")));
                 c.setScore(classificationDTO.getFloat("score"));
                 c.setMatchedUtterance(classificationDTO.getString("matched_utterance"));
-                JSONArray matchedParamsDTO = classificationDTO.getJSONArray("matched_params");
+                JSONArray matchedParamsDTO = classificationDTO.getJSONArray("matched_parameters");
                 //Iterate over the map and add the params to the prediction
                 for (int j = 0; j < matchedParamsDTO.length(); j++) {
                     JSONObject matchedParamDTO = matchedParamsDTO.getJSONObject(j);
@@ -225,21 +225,20 @@ public class NLUServerClientAPIWrapper {
         //We use a single class to represent all the possible entities, either custom or not
     }
 
-    private class EntityReferenceDTO {
+    private class IntentParameterDTO {
         String fragment;
         String name;
-        EntityTypeDTO entity;
+        String entity;
     }
 
     private class IntentDTO {
         String name;
         List<String> training_sentences = new ArrayList<>();
-        List<EntityReferenceDTO> entity_parameters = new ArrayList<>();
+        List<IntentParameterDTO> parameters = new ArrayList<>();
     }
 
     private class IntentReferenceDTO {
-        String name;
-        IntentDTO intent;
+        String intent;
     }
 
     private class NLUContextDTO {
@@ -254,9 +253,6 @@ public class NLUServerClientAPIWrapper {
         List<IntentDTO> intents = new ArrayList<>();
 
         BotDTO (BotData bot) {
-            Map<String, EntityTypeDTO> mapEntityTypes = new HashMap<>();
-            Map<String, IntentDTO> mapIntents = new HashMap<>();
-
             this.name = bot.getBotName();
             for (EntityType e : bot.getEntities()) {
                 EntityTypeDTO eDTO = new EntityTypeDTO();
@@ -270,7 +266,6 @@ public class NLUServerClientAPIWrapper {
                     }
                 }
                 this.entities.add(eDTO);
-                mapEntityTypes.put(eDTO.name, eDTO);
             }
 
             for (Intent i : bot.getIntents()) {
@@ -278,14 +273,13 @@ public class NLUServerClientAPIWrapper {
                 intentDTO.name = i.getName();
                 intentDTO.training_sentences.addAll(i.getTrainingSentences());
                 for (EntityParameter ep : i.getParameters()) {
-                    EntityReferenceDTO erDTO = new EntityReferenceDTO();
+                    IntentParameterDTO erDTO = new IntentParameterDTO();
                     erDTO.name = ep.getName();
                     erDTO.fragment = ep.getFragment();
-                    erDTO.entity = mapEntityTypes.get(ep.getType().getName());
-                    intentDTO.entity_parameters.add(erDTO);
+                    erDTO.entity = ep.getType().getName();
+                    intentDTO.parameters.add(erDTO);
                 }
                 this.intents.add(intentDTO);
-                mapIntents.put(intentDTO.name, intentDTO);
             }
 
             for (NLUContext c : bot.getNluContexts()) {
@@ -293,8 +287,8 @@ public class NLUServerClientAPIWrapper {
                 cDTO.name = c.getName();
                 for (IntentReference ir : c.getIntentReferences()) {
                     IntentReferenceDTO irDTO = new IntentReferenceDTO();
-                    irDTO.name = ir.getName();
-                    irDTO.intent = mapIntents.get(ir.getName());
+                    irDTO.intent = ir.getName();
+                    irDTO.intent = ir.getName();
                     cDTO.intent_refs.add(irDTO);
                 }
                 this.contexts.add(cDTO);
