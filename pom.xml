@@ -18,7 +18,7 @@
     <name>Client Connector for Xatkit's own NLU Server</name>
 
     <properties>
-        <lombok.version>1.18.12</lombok.version>
+        <lombok.version>LATEST</lombok.version>
         <unirest.version>3.13.6</unirest.version>
     </properties>
 
